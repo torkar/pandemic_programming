@@ -44,6 +44,12 @@ get_highest_covid_status <- function(df) {
   result
 }
 
+clean_child_cohabitants <- function(df) {
+  child_cohabitants <- df$Children
+  child_cohabitants[child_cohabitants < 0] <- NA  # some particpants provided a negative value...
+  child_cohabitants
+}
+
 get_adult_cohabitants <- function(df) {
   adult_cohabitants <- df$Coinhabitants - df$Children - 1  # the respondent themselve has to be substracted
   adult_cohabitants[adult_cohabitants < 0] <- NA
@@ -101,7 +107,7 @@ table(recoded$COVIDStatus)
 
 # get number of adult cohabitants
 recoded$AdultCohabitants <- get_adult_cohabitants(recoded)
-recoded$ChildCohabitants <- recoded$Children
+recoded$ChildCohabitants <- clean_child_cohabitants(recoded)
 recoded$Coinhabitants <- NULL
 recoded$Children <- NULL
 
