@@ -175,11 +175,19 @@ bform <- bf(mvbind(Erg1, Erg2, Erg3, Erg4, Erg5, Erg6) ~ 1 + mo(DP1) + mo(DP2) +
 
 p_ERG <- get_prior(bform, data = d, family = cumulative)
 p_ERG$prior[c(2)] <- "lkj(2)"
+<<<<<<< HEAD
 p_ERG$prior[c(6,40,74,108,142,176)] <- "normal(0,1)"
 p_ERG$prior[c(19,53,87,121,155,189)] <- "normal(0,5)"
 p_ERG$prior[c(26,60,94,128,162,196)] <- "weibull(2,1)"
 p_ERG$prior[c(31,65,99,133,167,201)] <- "dirichlet(2,2,2,2,2)" #covid
 p_ERG$prior[c(32,66,100,134,168,202)] <- "dirichlet(2,2,2)" # disabilities
+=======
+p_ERG$prior[c(6,39,72,105,138,171)] <- "normal(0,1)"
+p_ERG$prior[c(19,52,85,118,151,184)] <- "normal(0,5)"
+p_ERG$prior[c(25,58,91,124,157,190)] <- "weibull(2,1)"
+p_ERG$prior[c(30,63,96,129,162,195)] <- "dirichlet(2,2,2,2,2)" #covid
+p_ERG$prior[c(31,64,97,130,163,196)] <- "dirichlet(2,2,2)" # disabilities
+>>>>>>> 61ce69f265967fc1177f4e5ec42c07dc55294aba
 p_ERG$prior[c(32:36,65:69,98:102,131:135,164:168,197:201)] <- "dirichlet(2,2,2,2,2)" #DP
 p_ERG$prior[c(37,70,103,136,169,202)] <- "dirichlet(2,2,2,2,2)" #edu
 p_ERG$prior[c(38,71,104,137,170,203)] <- "dirichlet(2,2,2)" # isolation
