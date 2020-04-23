@@ -62,7 +62,7 @@ bcfa(model_cfa, data = d, n.chains = 4)#, dp=p_cfa)
 p_mlm <- dpriors(model_mlm)
 p_mlm[c(1,2,3,4)] <- "normal(0,5)"
 
-bsem(model_mlm, data = d, test = "none", dp = p_mlm) 
+bsem(model_mlm, data = d, test = "none", n.chains = 4, dp = p_mlm) 
 
 ################################################################################
 #
