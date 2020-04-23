@@ -1,6 +1,7 @@
 library(brms)
 library(data.table)
 library(dplyr)
+library(blavaan)
 options(mc.cores = parallel::detectCores()) # check num cores
 
 # Added by Sebastian
@@ -55,14 +56,14 @@ model_sem <- '# measurement model
 '
 
 # fit Confirmatory Factor Analysis (CFA) with uncertainty propagated
-bcfa(model_cfa, data = d, n.chains = 4)#, dp=p_cfa)
+b_cfa <- bcfa(model_cfa, data = d, n.chains = 4, test="none")
 
 # fit Structural Equation Model (SEM) with uncertainty propagated
 # set sane priors
 p_mlm <- dpriors(model_mlm)
 p_mlm[c(1,2,3,4)] <- "normal(0,5)"
 
-bsem(model_mlm, data = d, test = "none", n.chains = 4, dp = p_mlm) 
+b_sem <- bsem(model_mlm, data = d, test = "none", n.chains = 4, dp = p_mlm) 
 
 ################################################################################
 #
@@ -114,12 +115,12 @@ p$prior[c(32,60,88,116,144)] <- "dirichlet(2,2,2,2,2)" # org size
 # pp_check(model, resp = "WHO5S1", type="hist") etc. to check this
 
 # Set up our model using WHO5S* as outcomes and add predictors
-m2 <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s + 
-            mo(covidstatus_c) + mo(disabilities_c) + Gender + mo(education_c) + 
-            mo(OrganizationSize_c) + mo(Isolation) + AdultCohabitants_s + 
-            ChildCohabitants_s + YearsOfExperience_s + 
-            YearsOfWorkFromHomeExperience_s + (1 |p| Language),
-          data = d, family = cumulative, prior = p)
+m_WHO5S <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s + 
+                 mo(covidstatus_c) + mo(disabilities_c) + Gender + 
+                 mo(education_c) + mo(OrganizationSize_c) + mo(Isolation) + 
+                 AdultCohabitants_s + ChildCohabitants_s + YearsOfExperience_s + 
+                 YearsOfWorkFromHomeExperience_s + (1 |p| Language),
+               data = d, family = cumulative, prior = p)
 # diagnostics \widehat{R} < 1.01, neff > 0.1, and traceplots all look good
 #
 # so we have a good basic model, let's see later if adding more predictors will
@@ -140,8 +141,7 @@ m2 <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s +
 bform <- bf(mvbind(DP1,DP2,DP3,DP4,DP5) ~ 1 + age_s + mo(disabilities_c) + 
                mo(education_c) + (1 |c| Country) + (1 |g| Gender))
 
-p_DP <- get_prior(bform,
-                  data = d, family = cumulative)
+p_DP <- get_prior(bform, data = d, family = cumulative)
 
 p_DP$prior[2] <- "lkj(2)"
 p_DP$prior[c(6,22,38,54,70)] <- "normal(0,1)"
@@ -180,9 +180,9 @@ p_ERG$prior[c(19,53,87,121,155,189)] <- "normal(0,5)"
 p_ERG$prior[c(26,60,94,128,162,196)] <- "weibull(2,1)"
 p_ERG$prior[c(31,65,99,133,167,201)] <- "dirichlet(2,2,2,2,2)" #covid
 p_ERG$prior[c(32,66,100,134,168,202)] <- "dirichlet(2,2,2)" # disabilities
-p_ERG$prior[c(33:37,67:71,101:105,135:139,169:173,203:207)] <- "dirichlet(2,2,2,2,2)" #DP
-p_ERG$prior[c(38,72,106,140,174,208)] <- "dirichlet(2,2,2,2,2)" #edu
-p_ERG$prior[c(39,73,107,141,175,209)] <- "dirichlet(2,2,2)" # isolation
+p_ERG$prior[c(32:36,65:69,98:102,131:135,164:168,197:201)] <- "dirichlet(2,2,2,2,2)" #DP
+p_ERG$prior[c(37,70,103,136,169,202)] <- "dirichlet(2,2,2,2,2)" #edu
+p_ERG$prior[c(38,71,104,137,170,203)] <- "dirichlet(2,2,2)" # isolation
 
 m_ERG <- brm(bform, data = d, family = cumulative, prior = p_ERG)
 
