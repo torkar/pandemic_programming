@@ -53,15 +53,16 @@ model_sem <- '# measurement model
   WHO5S_lat ~ WHO5B_lat + Erg_lat + DP_lat + FearResilience  + COVIDStatus + AdultCohabitants + Disabilities + Education
   PERFS_lat ~ PERFB_lat + Erg_lat + DP_lat + FearResilience + YearsOfWorkFromHomeExperience + ChildCohabitants + Disabilities + Education
 '
-# set sane priors
-#p_cfa <- dpriors(model_cfa)
-#p_cfa[c(2,3,4)] <- "normal(0,5)"
 
 # fit Confirmatory Factor Analysis (CFA) with uncertainty propagated
 bcfa(model_cfa, data = d, n.chains = 4)#, dp=p_cfa)
 
 # fit Structural Equation Model (SEM) with uncertainty propagated
-bsem(model_mlm, data = d, test = "none") 
+# set sane priors
+p_mlm <- dpriors(model_mlm)
+p_mlm[c(1,2,3,4)] <- "normal(0,5)"
+
+bsem(model_mlm, data = d, test = "none", dp = p_mlm) 
 
 ################################################################################
 #
@@ -113,12 +114,12 @@ p$prior[c(32,60,88,116,144)] <- "dirichlet(2,2,2,2,2)" # org size
 # pp_check(model, resp = "WHO5S1", type="hist") etc. to check this
 
 # Set up our model using WHO5S* as outcomes and add predictors
-m_WHO5S <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s + 
-                 mo(covidstatus_c) + mo(disabilities_c) + Gender + 
-                 mo(education_c) + mo(OrganizationSize_c) + mo(Isolation) + 
-                 AdultCohabitants_s + ChildCohabitants_s + YearsOfExperience_s + 
-                 YearsOfWorkFromHomeExperience_s + (1 |p| Language),
-               data = d, family = cumulative, prior = p)
+m2 <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s + 
+            mo(covidstatus_c) + mo(disabilities_c) + Gender + mo(education_c) + 
+            mo(OrganizationSize_c) + mo(Isolation) + AdultCohabitants_s + 
+            ChildCohabitants_s + YearsOfExperience_s + 
+            YearsOfWorkFromHomeExperience_s + (1 |p| Language),
+          data = d, family = cumulative, prior = p)
 # diagnostics \widehat{R} < 1.01, neff > 0.1, and traceplots all look good
 #
 # so we have a good basic model, let's see later if adding more predictors will
