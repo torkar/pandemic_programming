@@ -1,7 +1,7 @@
+library(blavaan)
 library(brms)
 library(data.table)
 library(dplyr)
-library(blavaan)
 options(mc.cores = parallel::detectCores()) # check num cores
 
 # Added by Sebastian
@@ -15,7 +15,7 @@ d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE,
 d$age_s <- scale(as.integer(d$Age))
 d$disabilities_c <- as.integer(d$Disabilities)
 d$covidstatus_c <- as.integer(d$COVIDStatus) +1
-d$education_c <- as.integer(d$Education)
+d$education_c <- as.integer(d$Education) +1
 d$AdultCohabitants_s <- scale(as.numeric(d$AdultCohabitants))
 d$ChildCohabitants_s <- scale(as.numeric(d$ChildCohabitants))
 d$YearsOfExperience_s <- scale(as.numeric(d$YearsOfExperience))
@@ -168,6 +168,7 @@ m_DP <- brm(bform, data = d, family = cumulative, prior = p_DP)
 # Ergonomics ~ Disaster Preparedness,  Age, Disabilities, Education, Country, 
 # Gender,  Isolation, AdultCoinhabitants, ChildCoinhabitants, COVIDStatus,
 
+
 bform <- bf(mvbind(Erg1, Erg2, Erg3, Erg4, Erg5, Erg6) ~ 1 + mo(DP1) + mo(DP2) + 
               mo(DP3) + mo(DP4) + mo(DP5) + age_s + mo(disabilities_c) + 
               mo(education_c) +  mo(Isolation) + AdultCohabitants_s + 
@@ -179,9 +180,9 @@ p_ERG$prior[c(6,39,72,105,138,171)] <- "normal(0,1)"
 p_ERG$prior[c(19,52,85,118,151,184)] <- "normal(0,5)"
 p_ERG$prior[c(25,58,91,124,157,190)] <- "weibull(2,1)"
 p_ERG$prior[c(30,63,96,129,162,195)] <- "dirichlet(2,2,2,2,2)" #covid
-p_ERG$prior[c(31,64,97,130,163,196)] <- "dirichlet(2,2,2)" # disabilities
-p_ERG$prior[c(32:36,65:69,98:102,131:135,164:168,197:201)] <- "dirichlet(2,2,2,2,2)" #DP
-p_ERG$prior[c(37,70,103,136,169,202)] <- "dirichlet(2,2,2,2,2)" #edu
+p_ERG$prior[c(31,64,97,130,163,196)] <- "dirichlet(2,2)" # disabilities
+p_ERG$prior[c(32:36,65:69,98:102,131:135,164:168,197:201)] <- "dirichlet(2,2,2,2)" #DP
+p_ERG$prior[c(37,70,103,136,169,202)] <- "dirichlet(2,2,2,2)" #edu
 p_ERG$prior[c(38,71,104,137,170,203)] <- "dirichlet(2,2,2)" # isolation
 
 m_ERG <- brm(bform, data = d, family = cumulative, prior = p_ERG)
