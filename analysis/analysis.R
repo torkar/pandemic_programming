@@ -13,12 +13,12 @@ d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE,
            na.strings=c("", "null", "NA", -99))
 # cleanup some stuff
 d$age_s <- scale(as.integer(d$Age))
-d$disabilities_c <- as.integer(d$Disabilities)
-d$covidstatus_c <- as.integer(d$COVIDStatus) +1
-d$education_c <- as.integer(d$Education) +1
-d$AdultCohabitants_s <- scale(as.numeric(d$AdultCohabitants))
-d$ChildCohabitants_s <- scale(as.numeric(d$ChildCohabitants))
-d$YearsOfExperience_s <- scale(as.numeric(d$YearsOfExperience))
+d$disabilities_c <- as.integer(d$Disabilities) + 1
+d$covidstatus_c <- as.integer(d$COVIDStatus) + 1
+d$education_c <- as.integer(d$Education) + 1
+d$AdultCohabitants_s <- scale(as.numeric(d$AdultCohabitants) + 1)
+d$ChildCohabitants_s <- scale(as.numeric(d$ChildCohabitants) + 1)
+d$YearsOfExperience_s <- scale(as.numeric(d$YearsOfExperience)) #actually months
 d$YearsOfWorkFromHomeExperience_s <- scale(as.numeric(d$YearsOfWorkFromHomeExperience))
 d$OrganizationSize_c <- as.numeric(d$OrganizationSize)
 
@@ -48,14 +48,16 @@ model_sem <- '# measurement model
   DP_lat =~ DP1 + DP2 + DP3 + DP4 + DP5             
   
   # structural model (regressions)  
-  DP_lat ~ Age + Disabilities + Education
-  FearResilience ~ DP_lat + Isolation + AdultCohabitants + ChildCohabitants + COVIDStatus + Disabilities + Education + Age
-  Erg_lat ~ DP_lat + Age + Disabilities + Education + Isolation + AdultCohabitants + ChildCohabitants + COVIDStatus + YearsOfWorkFromHomeExperience
-  WHO5S_lat ~ WHO5B_lat + Erg_lat + DP_lat + FearResilience  + COVIDStatus + AdultCohabitants + Disabilities + Education
-  PERFS_lat ~ PERFB_lat + Erg_lat + DP_lat + FearResilience + YearsOfWorkFromHomeExperience + ChildCohabitants + Disabilities + Education
+  DP_lat ~ age_s + disabilities_c + education_c
+  FearResilience ~ DP_lat + Isolation + AdultCohabitants_s + ChildCohabitants_s + covidstatus_c + disabilities_c + education_c + age_s
+  Erg_lat ~ DP_lat + age_s + disabilities_c + education_c + Isolation + AdultCohabitants_s + ChildCohabitants_s + covidstatus_c + YearsOfWorkFromHomeExperience_s
+  WHO5S_lat ~ WHO5B_lat + Erg_lat + DP_lat + FearResilience  + covidstatus_c + AdultCohabitants_s + disabilities_c + education_c
+  PERFS_lat ~ PERFB_lat + Erg_lat + DP_lat + FearResilience + YearsOfWorkFromHomeExperience_s + ChildCohabitants_s + disabilities_c + education_c
 '
 
-# fit Confirmatory Factor Analysis (CFA) with uncertainty propagated
+# fit Confirmatory Factor Analysis (CFA) with uncertainty propagation
+p_cfa <- dpriors(model_cfa)
+p_cfa[c(1,2,3,4)] <- "normal(0,5)"
 b_cfa <- bcfa(model_cfa, data = d, n.chains = 4, test="none")
 
 # fit Structural Equation Model (SEM) with uncertainty propagated
