@@ -21,6 +21,7 @@ d$ChildCohabitants_s <- scale(as.numeric(d$ChildCohabitants) + 1)
 d$YearsOfExperience_s <- scale(as.numeric(d$YearsOfExperience)) #actually months
 d$YearsOfWorkFromHomeExperience_s <- scale(as.numeric(d$YearsOfWorkFromHomeExperience))
 d$OrganizationSize_c <- as.numeric(d$OrganizationSize)
+d$fear_s <- d$FearResilience
 
 d[, 11:47] <- as.data.frame(sapply(d[, 11:47], as.numeric))
 
@@ -60,6 +61,7 @@ df$isolation_c <- d$Isolation
 df$covidstatus_c <- d$covidstatus_c
 df$fear_s <- d$FearResilience
 df$country <- d$Country
+df$gender <- d$Gender
 # continuous 
 df$age_s <- d$age_s
 df$adultcohab_s <- d$AdultCohabitants_s
@@ -148,13 +150,114 @@ model_sem <- '# measurement model
 ################################################################################
 #
 # Use lavaan w/o uncertainty propagation
-#
+# TODO: Add LOOCV or some other things to validate fit etc.
 ################################################################################
 l_cfa <- cfa(model_cfa, data = df)
 summary(l_cfa)
 
 l_sem <- sem(model_sem, data = df)
-summary(l_sem)
+summary(l_sem, fit.measures = TRUE)
+# All diagnostics passed
+# CFI > 0.97 Comparative Fit Index
+# RMSEA < 0.05 Root Mean Square Error of Approximation
+# SRMR < 0.05 Standardized Root Mean Square Residual
+
+#                         Estimate  Std.Err  z-value  P(>|z|)
+# DP_l:
+#   age_s                 0.031    0.021    1.444    0.149
+# fear_s:
+#   adultcohab_s          0.075    0.045    1.658    0.097
+#   childcohab_s          0.084    0.047    1.779    0.075
+#   education_c          -0.115    0.059   -1.945    0.052
+#   age_s                -0.005    0.054   -0.087    0.930
+# Erg_l:
+#   disabilities_c       -0.015    0.057   -0.262    0.793
+#   education_c           0.009    0.025    0.373    0.709
+#   isolation_c           0.033    0.051    0.644    0.519
+#   adultcohab_s         -0.033    0.021   -1.589    0.112
+#   covidstatus_c        -0.047    0.031   -1.539    0.124
+# DeltaWellbeing_l:
+#   education_c          -0.023    0.030   -0.757    0.449
+# DeltaPerformance_l:
+#   DP_l                 -0.029    0.043   -0.665    0.506
+#   fear_s                0.003    0.009    0.308    0.758
+#   yrsfwrkfrmhmx_       -0.026    0.018   -1.412    0.158
+#   childcohab_s          0.010    0.016    0.601    0.548
+#   disabilities_c        0.077    0.045    1.705    0.088
+#   education_c          -0.003    0.020   -0.134    0.894
+
+# Let's try a model where we drop the above factors
+model_sem <- '# measurement model
+  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+
+  # structural model (regressions)
+  DP_l ~ disabilities_c + education_c
+  fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c
+  Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s
+  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c
+  DeltaPerformance_l ~ Erg_l
+'
+
+l_sem <- sem(model_sem, data = df)
+summary(l_sem, fit.measures = TRUE)
+# lavaan WARNING: exogenous variable(s) declared as ordered in data: 
+# disabilities_c education_c isolation_c covidstatus_c
+# Yes we now they are coded as ordered, which is how it should be
+
+# The squared multiple correlations provide an indication of how well the 
+# independent variables predicted the dependent variable. The index ranges 
+# between 0 and 1. The closer the index is to one, the better the predictability
+# of y given xs. The squared multiple correlations can be extracted by passing 
+# the "rsquare" argument to the function inspect, as in
+inspect(l_sem, "rsquare")
+#          DeltaW1            DeltaW2            DeltaW3            DeltaW4            DeltaW5            DeltaP1 
+#            0.735              0.587              0.671              0.473              0.528              0.293 
+#          DeltaP2            DeltaP3            DeltaP4            DeltaP5            DeltaP6            DeltaP8 
+#            0.473              0.364              0.448              0.442              0.502              0.625 
+#             Erg1               Erg2               Erg3               Erg4               Erg5               Erg6 
+#            0.484              0.453              0.327              0.424              0.548              0.757 
+#              DP1                DP2                DP3                DP4                DP5             fear_s 
+#            0.255              0.128              0.345              0.213              0.351              0.066 
+#            DeltaWellbeing_l DeltaPerformance_l   Erg_l               DP_l 
+#            0.092              0.098              0.195              0.015 
+
+# Squared Multiple Correlations
+# – A variable should be dropped if its R^2  is relatively lower than the others
+# Identification of variables with squared multiple correlations relatively 
+# lower than others could be automated by identifying variables two standard 
+# deviations below the mean squared multiple correlations values.
+
+# get squared multiple correlations
+rSquared = inspect(l_sem, "rsquare")
+# extract R^2 for IV
+nLatentVariables <- 4
+xVar = rSquared[1:(length(rSquared) - nLatentVariables)]
+# which should be excluded?
+names(xVar[xVar < (mean(xVar) - (2 * sd(xVar)))])
+# returns
+# fear_s
+# in this case
+
+model_sem <- '# measurement model
+  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+
+  # structural model (regressions)
+  DP_l ~ disabilities_c + education_c
+  fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c
+  Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s
+  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c
+  DeltaPerformance_l ~ Erg_l
+  DeltaWellbeing_l ~ DeltaPerformance_l
+'
+
+l_sem <- sem(model_sem, data = df)
+summary(l_sem, fit.measures = TRUE)
 
 ################################################################################
 #
@@ -184,22 +287,23 @@ loo_compare(loo(m0), loo(m1))
 # prior predictive checks
 # pull default priors for our model
 p <- get_prior(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s + 
-                 mo(covidstatus_c) + mo(disabilities_c) + Gender + 
+                 mo(covidstatus_c) + mo(disabilities_c) + 
                  mo(education_c) + mo(OrganizationSize_c) + mo(Isolation) + 
                  AdultCohabitants_s + ChildCohabitants_s + YearsOfExperience_s + 
-                 YearsOfWorkFromHomeExperience_s + (1 |p| Language),
+                 YearsOfWorkFromHomeExperience_s + (1 |p| Country) +
+                 (1 |g| Gender),
                data = d, family = cumulative)
 
 # set our own sane priors
 p$prior[2] <- "lkj(2)" # broad correlation matrix prior
-p$prior[c(5,35,65,95,125)] <- "normal(0,1)"
-p$prior[c(20,50,80,110,140)] <- "normal(0,5)"
-p$prior[c(27,53,81,109,137)] <- "weibull(2,1)"
-p$prior[c(28,56,84,112,140)] <- "dirichlet(2,2,2,2,2)" #covid status
-p$prior[c(29,57,85,113,141)] <- "dirichlet(2,2)" # disabilities
-p$prior[c(30,58,86,114,142)] <- "dirichlet(2,2,2,2)" # education
-p$prior[c(31,59,87,115,143)] <- "dirichlet(2,2,2)" # isolation
-p$prior[c(32,60,88,116,144)] <- "dirichlet(2,2,2,2,2)" # org size
+p$prior[c(6,33,60,87,114)] <- "normal(0,1)"
+p$prior[c(17,44,71,98,125)] <- "normal(0,5)"
+p$prior[c(23,50,77,104,131)] <- "weibull(2,1)"
+p$prior[c(28,55,82,109,136)] <- "dirichlet(2,2,2,2,2)" #covid status
+p$prior[c(29,56,83,110,137)] <- "dirichlet(2,2)" # disabilities
+p$prior[c(30,57,84,111,138)] <- "dirichlet(2,2,2,2)" # education
+p$prior[c(31,58,85,112,139)] <- "dirichlet(2,2,2)" # isolation
+p$prior[c(32,59,86,113,140)] <- "dirichlet(2,2,2,2,2)" # org size
 
 # The priors above result in a nearly uniform prior on the outcome scale.
 # Run the below model with sample_prior="only" and then use, e.g., 
@@ -207,11 +311,13 @@ p$prior[c(32,60,88,116,144)] <- "dirichlet(2,2,2,2,2)" # org size
 
 # Set up our model using WHO5S* as outcomes and add predictors
 m_WHO5S <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s + 
-                 mo(covidstatus_c) + mo(disabilities_c) + Gender + 
+                 mo(covidstatus_c) + mo(disabilities_c) + 
                  mo(education_c) + mo(OrganizationSize_c) + mo(Isolation) + 
                  AdultCohabitants_s + ChildCohabitants_s + YearsOfExperience_s + 
-                 YearsOfWorkFromHomeExperience_s + (1 |p| Language),
-               data = d, family = cumulative, prior = p)
+                 YearsOfWorkFromHomeExperience_s + (1 |p| Country) + 
+                 (1 |g| Gender),
+               data = d, family = cumulative, prior = p, 
+               control = list(adapt_delta=0.95))
 # diagnostics \widehat{R} < 1.01, neff > 0.1, and traceplots all look good
 #
 # so we have a good basic model, let's see later if adding more predictors will
@@ -223,33 +329,36 @@ m_WHO5S <- brm(mvbind(WHO5S1, WHO5S2, WHO5S3, WHO5S4, WHO5S5) ~ 1 + age_s +
 ################################################################################
 
 p <- get_prior(mvbind(WHO5B1, WHO5B2, WHO5B3, WHO5B4, WHO5B5) ~ 1 + age_s + 
-                 mo(covidstatus_c) + mo(disabilities_c) + Gender + 
+                 mo(covidstatus_c) + mo(disabilities_c) +
                  mo(education_c) + mo(OrganizationSize_c) + mo(Isolation) + 
                  AdultCohabitants_s + ChildCohabitants_s + YearsOfExperience_s + 
-                 YearsOfWorkFromHomeExperience_s + (1 |p| Language),
+                 YearsOfWorkFromHomeExperience_s + (1 |p| Country) + 
+                 (1 |g| Gender),
                data = d, family = cumulative)
 
 # set our own sane priors
 p$prior[2] <- "lkj(2)" # broad correlation matrix prior
-p$prior[c(5,35,65,95,125)] <- "normal(0,1)"
-p$prior[c(20,50,80,110,140)] <- "normal(0,5)"
-p$prior[c(27,53,81,109,137)] <- "weibull(2,1)"
-p$prior[c(28,56,84,112,140)] <- "dirichlet(2,2,2,2,2)" #covid status
-p$prior[c(29,57,85,113,141)] <- "dirichlet(2,2)" # disabilities
-p$prior[c(30,58,86,114,142)] <- "dirichlet(2,2,2,2)" # education
-p$prior[c(31,59,87,115,143)] <- "dirichlet(2,2,2)" # isolation
-p$prior[c(32,60,88,116,144)] <- "dirichlet(2,2,2,2,2)" # org size
+p$prior[c(6,33,60,87,114)] <- "normal(0,1)"
+p$prior[c(17,44,71,98,125)] <- "normal(0,5)"
+p$prior[c(23,50,77,104,131)] <- "weibull(2,1)"
+p$prior[c(28,55,82,109,136)] <- "dirichlet(2,2,2,2,2)" #covid status
+p$prior[c(29,56,83,110,137)] <- "dirichlet(2,2)" # disabilities
+p$prior[c(30,57,84,111,138)] <- "dirichlet(2,2,2,2)" # education
+p$prior[c(31,58,85,112,139)] <- "dirichlet(2,2,2)" # isolation
+p$prior[c(32,59,86,113,140)] <- "dirichlet(2,2,2,2,2)" # org size
 # The priors above results in a nearly uniform prior on the outcome scale.
 # Run the below model with sample_prior="only" and then use, e.g., 
 # pp_check(model, resp = "WHO5B1", type="hist") etc. to check this
 
 # Set up our model using WHO5B* as outcomes and add predictors
 m_WHO5B <- brm(mvbind(WHO5B1, WHO5B2, WHO5B3, WHO5B4, WHO5B5) ~ 1 + age_s + 
-                 mo(covidstatus_c) + mo(disabilities_c) + Gender + 
+                 mo(covidstatus_c) + mo(disabilities_c) + 
                  mo(education_c) + mo(OrganizationSize_c) + mo(Isolation) + 
                  AdultCohabitants_s + ChildCohabitants_s + YearsOfExperience_s + 
-                 YearsOfWorkFromHomeExperience_s + (1 |p| Language),
-               data = d, family = cumulative, prior = p)
+                 YearsOfWorkFromHomeExperience_s + (1 |p| Country) + 
+                 (1 |g| Gender),
+               data = d, family = cumulative, prior = p, 
+               control = list(adapt_delta=.95))
 
 ################################################################################
 #
@@ -276,18 +385,19 @@ p_DP$prior[c(15,31,47,63,79)] <- "weibull(2,1)"
 p_DP$prior[c(20,36,52,68,84)] <- "dirichlet(2,2)"
 p_DP$prior[c(21,37,53,69,85)] <- "dirichlet(2,2,2,2)"
 
-m_DP <- brm(bform, data = d, family = cumulative, prior = p_DP)
+m_DP <- brm(bform, data = d, family = cumulative, prior = p_DP, 
+            control = list(adapt_delta=0.95))
 
 ################################################################################
 #
 # Fear model
 #
 ################################################################################
-
+# TODO: Check execution below since formulas changed 2020-04-28
 bform <- bf(fear_s ~ 1 + mo(DP1) + mo(DP2) + mo(DP3) + mo(DP4) + mo(DP5) + 
               mo(isolation_c) + childcohab_s + mo(covidstatus_c) + 
               mo(disabilities_c) + mo(education_c) + age_s +
-              (1 | country))
+              (1 | Country) + (1 | Gender))
 
 p_DP <- get_prior(bform, data = df)
 
@@ -331,6 +441,26 @@ p_ERG$prior[c(38,71,104,137,170,203)] <- "dirichlet(2,2,2)" # isolation
 m_ERG <- brm(bform, data = d, family = cumulative, prior = p_ERG, 
              control = list(adapt_delta=.95))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ################################################################################
 #
 # TODO: Productivity models 
@@ -344,3 +474,20 @@ m_ERG <- brm(bform, data = d, family = cumulative, prior = p_ERG,
 # HPQS ~ HPQB+DP+ERG+FearResilience+WHO5S+RemoteExperience
 # HPQB ~ age_s + gender_s + education_c + OrganizationSize_c + Disabilities_c + 
 #   YearsOfExperience_c + Fulltime
+
+# # A simple model
+# bform <- bf(mvbind(HPQS1,HPQS2,HPQS3,HPQS4,HPQS5,HPQS6,HPQS7,HPQS8) ~ 1 + 
+#               fear_s + YearsOfWorkFromHomeExperience_s + age_s + Gender +
+#               mo(education_c) + mo(OrganizationSize_c) + mo(disabilities_c) +
+#               YearsOfExperience_s + Fulltime)
+# 
+# # add varying intercept on Gender and Country
+# bform_vi <- bf(mvbind(HPQS1,HPQS2,HPQS3,HPQS4,HPQS5,HPQS6,HPQS7,HPQS8) ~ 1 + 
+#                  fear_s + YearsOfWorkFromHomeExperience_s + age_s +
+#                  mo(education_c) + mo(OrganizationSize_c) + mo(disabilities_c) +
+#                  YearsOfExperience_s + Fulltime + (1 | Gender) + (1 | Country))
+# 
+# foo <- brm(bform, data = d, family = cumulative)
+# bar <- brm(bform_vi, data = d, family = cumulative)
+# 
+# loo_compare(loo(foo), loo(bar))
