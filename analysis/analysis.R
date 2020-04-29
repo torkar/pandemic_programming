@@ -125,7 +125,7 @@ df[,c("DeltaW1",
 
 # Unfortunately this does not converge if we're using >2 genders
 # Let's focus on male/female since that's the majority of our sample, i.e., 
-# where our variability exists.
+# where our variability exists (18 cases removed)
 
 # For now, pick only F and M
 df <- df[df$gender == "Male" | df$gender == "Female",]
@@ -139,7 +139,7 @@ model_cfa <- '# measurement model
   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5'
 
-l_cfa <- cfa(model_cfa, data = df)
+l_cfa <- cfa(model_cfa, data = df, missing = "pairwise")
 summary(l_cfa, fit.measures=TRUE)
 
 model_sem <- '# measurement model
@@ -184,6 +184,9 @@ loo_compare(loo(m0), loo(m1))
 # > -80.4 + c(-1,1) * 22.1 * 2.576
 # [1] -137.3296  -23.4704
 # in short, on the 99%-level (z-score 2.576) there's clearly a difference.
+# So we shoul dmake use of varying intercepts for sure, and Country and Gender
+# are good candidates (Language can partly be explained by Country and we 
+# avoid strong collinearity this way).
 
 # prior predictive checks
 # pull default priors for our model
