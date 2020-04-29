@@ -133,6 +133,15 @@ df <- df[df$gender == "Male" | df$gender == "Female",]
 # code female as 1
 df$genderF <- ifelse(df$gender == "Female", 1, 0) # Female == 1, Male == 0
 
+model_cfa <- '# measurement model
+  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5'
+
+l_cfa <- cfa(model_cfa, data = df)
+summary(l_cfa, fit.measures=TRUE)
+
 model_sem <- '# measurement model
   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
