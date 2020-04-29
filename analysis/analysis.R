@@ -1,4 +1,4 @@
-library(blavaan)
+library(lavaan)
 library(brms)
 library(data.table)
 library(dplyr)
