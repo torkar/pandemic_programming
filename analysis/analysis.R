@@ -2,12 +2,8 @@ library(blavaan)
 library(brms)
 library(data.table)
 library(dplyr)
+library(sjmisc)
 options(mc.cores = parallel::detectCores()) # check num cores
-
-# Added by Sebastian
-# d <- fread("../data/export_2020-04-16.csv", header=TRUE, sep=",", quote="\"", 
-# strip.white=TRUE, showProgress=TRUE, encoding="UTF-8", 
-# na.strings=c("", "null", "NA", -99), stringsAsFactors=FALSE)
 
 d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
            na.strings=c("", "null", "NA", -99))
@@ -60,7 +56,7 @@ df$education_c <- d$education_c
 df$isolation_c <- d$Isolation
 df$covidstatus_c <- d$covidstatus_c
 df$fear_s <- d$FearResilience
-df$country <- d$Country
+df$country <- d$Country # droplevels() later if cutting data
 df$gender <- d$Gender
 # continuous 
 df$age_s <- d$age_s
@@ -69,6 +65,8 @@ df$childcohab_s <- d$ChildCohabitants_s
 df$yearsofworkfromhomeexp_s <- d$YearsOfWorkFromHomeExperience_s
 
 df <- df[complete.cases(df),]
+
+df$country <- droplevels(df$country)
 
 df[,c("DeltaW1",
       "DeltaW2",
@@ -93,11 +91,7 @@ df[,c("DeltaW1",
       "DP2",
       "DP3",
       "DP4",
-      "DP5",
-      "disabilities_c",
-      "education_c",
-      "isolation_c",
-      "covidstatus_c")] <-
+      "DP5")] <-
   lapply(df[,c("DeltaW1",
                "DeltaW2",
                "DeltaW3",
@@ -121,125 +115,23 @@ df[,c("DeltaW1",
                "DP2",
                "DP3",
                "DP4",
-               "DP5",
-               "disabilities_c",
-               "education_c",
-               "isolation_c",
-               "covidstatus_c")], ordered)
+               "DP5")], ordered)
 
-model_cfa <- '
-  DeltaWellbeing =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
-  DeltaPerformance =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5 + DeltaP6 + DeltaP8
-  Erg =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
-  DP =~ DP1 + DP2 + DP3 + DP4 + DP5
-'
-
-model_sem <- '# measurement model
-  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
-  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
-  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
-  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
-
-  # structural model (regressions)
-  DP_l ~ age_s + disabilities_c + education_c
-  fear_s ~ DP_l + isolation_c + adultcohab_s + childcohab_s + covidstatus_c + disabilities_c + education_c + age_s
-  Erg_l ~ DP_l + age_s + disabilities_c + education_c + isolation_c + adultcohab_s + childcohab_s + covidstatus_c + yearsofworkfromhomeexp_s
-  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c + education_c
-  DeltaPerformance_l ~ Erg_l + DP_l + fear_s + yearsofworkfromhomeexp_s + childcohab_s + disabilities_c + education_c
-'
 ################################################################################
 #
-# Use lavaan w/o uncertainty propagation
-# TODO: Add LOOCV or some other things to validate fit etc.
+# SEM
+#
 ################################################################################
-l_cfa <- cfa(model_cfa, data = df)
-summary(l_cfa)
 
-l_sem <- sem(model_sem, data = df)
-summary(l_sem, fit.measures = TRUE)
-# All diagnostics passed
-# CFI > 0.97 Comparative Fit Index
-# RMSEA < 0.05 Root Mean Square Error of Approximation
-# SRMR < 0.05 Standardized Root Mean Square Residual
+# Unfortunately this does not converge if we're using >2 genders
+# Let's focus on male/female since that's the majority of our sample, i.e., 
+# where our variability exists.
 
-#                         Estimate  Std.Err  z-value  P(>|z|)
-# DP_l:
-#   age_s                 0.031    0.021    1.444    0.149
-# fear_s:
-#   adultcohab_s          0.075    0.045    1.658    0.097
-#   childcohab_s          0.084    0.047    1.779    0.075
-#   education_c          -0.115    0.059   -1.945    0.052
-#   age_s                -0.005    0.054   -0.087    0.930
-# Erg_l:
-#   disabilities_c       -0.015    0.057   -0.262    0.793
-#   education_c           0.009    0.025    0.373    0.709
-#   isolation_c           0.033    0.051    0.644    0.519
-#   adultcohab_s         -0.033    0.021   -1.589    0.112
-#   covidstatus_c        -0.047    0.031   -1.539    0.124
-# DeltaWellbeing_l:
-#   education_c          -0.023    0.030   -0.757    0.449
-# DeltaPerformance_l:
-#   DP_l                 -0.029    0.043   -0.665    0.506
-#   fear_s                0.003    0.009    0.308    0.758
-#   yrsfwrkfrmhmx_       -0.026    0.018   -1.412    0.158
-#   childcohab_s          0.010    0.016    0.601    0.548
-#   disabilities_c        0.077    0.045    1.705    0.088
-#   education_c          -0.003    0.020   -0.134    0.894
+# For now, pick only F and M
+df <- df[df$gender == "Male" | df$gender == "Female",]
 
-# Let's try a model where we drop the above factors
-model_sem <- '# measurement model
-  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
-  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
-  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
-  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
-
-  # structural model (regressions)
-  DP_l ~ disabilities_c + education_c
-  fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c
-  Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s
-  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c
-  DeltaPerformance_l ~ Erg_l
-'
-
-l_sem <- sem(model_sem, data = df)
-summary(l_sem, fit.measures = TRUE)
-# lavaan WARNING: exogenous variable(s) declared as ordered in data: 
-# disabilities_c education_c isolation_c covidstatus_c
-# Yes we now they are coded as ordered, which is how it should be
-
-# The squared multiple correlations provide an indication of how well the 
-# independent variables predicted the dependent variable. The index ranges 
-# between 0 and 1. The closer the index is to one, the better the predictability
-# of y given xs. The squared multiple correlations can be extracted by passing 
-# the "rsquare" argument to the function inspect, as in
-inspect(l_sem, "rsquare")
-#          DeltaW1            DeltaW2            DeltaW3            DeltaW4            DeltaW5            DeltaP1 
-#            0.735              0.587              0.671              0.473              0.528              0.293 
-#          DeltaP2            DeltaP3            DeltaP4            DeltaP5            DeltaP6            DeltaP8 
-#            0.473              0.364              0.448              0.442              0.502              0.625 
-#             Erg1               Erg2               Erg3               Erg4               Erg5               Erg6 
-#            0.484              0.453              0.327              0.424              0.548              0.757 
-#              DP1                DP2                DP3                DP4                DP5             fear_s 
-#            0.255              0.128              0.345              0.213              0.351              0.066 
-#            DeltaWellbeing_l DeltaPerformance_l   Erg_l               DP_l 
-#            0.092              0.098              0.195              0.015 
-
-# Squared Multiple Correlations
-# – A variable should be dropped if its R^2  is relatively lower than the others
-# Identification of variables with squared multiple correlations relatively 
-# lower than others could be automated by identifying variables two standard 
-# deviations below the mean squared multiple correlations values.
-
-# get squared multiple correlations
-rSquared = inspect(l_sem, "rsquare")
-# extract R^2 for IV
-nLatentVariables <- 4
-xVar = rSquared[1:(length(rSquared) - nLatentVariables)]
-# which should be excluded?
-names(xVar[xVar < (mean(xVar) - (2 * sd(xVar)))])
-# returns
-# fear_s
-# in this case
+# code female as 1
+df$genderF <- ifelse(df$gender == "Female", 1, 0) # Female == 1, Male == 0
 
 model_sem <- '# measurement model
   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
@@ -248,12 +140,12 @@ model_sem <- '# measurement model
   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
 
   # structural model (regressions)
-  DP_l ~ disabilities_c + education_c
-  fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c
-  Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s
-  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c
-  DeltaPerformance_l ~ Erg_l
-  DeltaWellbeing_l ~ DeltaPerformance_l
+  DP_l ~ disabilities_c + education_c + genderF
+  fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c + genderF
+  Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s + genderF
+  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c + genderF
+  DeltaPerformance_l ~ Erg_l + genderF
+  DeltaWellbeing_l ~ DeltaPerformance_l 
 '
 
 l_sem <- sem(model_sem, data = df)
@@ -395,26 +287,27 @@ m_DP <- brm(bform, data = d, family = cumulative, prior = p_DP,
 ################################################################################
 # TODO: Check execution below since formulas changed 2020-04-28
 bform <- bf(fear_s ~ 1 + mo(DP1) + mo(DP2) + mo(DP3) + mo(DP4) + mo(DP5) + 
-              mo(isolation_c) + childcohab_s + mo(covidstatus_c) + 
+              mo(Isolation) + ChildCohabitants_s + mo(covidstatus_c) + 
               mo(disabilities_c) + mo(education_c) + age_s +
               (1 | Country) + (1 | Gender))
 
-p_DP <- get_prior(bform, data = df)
+p_DP <- get_prior(bform, data = d)
 
 p_DP$prior[1] <- "normal(0,2)"
 p_DP$prior[13] <- "normal(0,5)"
-p_DP$prior[c(14,17)] <- "weibull(2,1)"
-p_DP$prior[18] <- "dirichlet(2,2,2,2,2)"
-p_DP$prior[19] <- "dirichlet(2,2)"
-p_DP$prior[20:25] <- "dirichlet(2,2,2,2)"
-p_DP$prior[26] <- "dirichlet(2,2,2)"
+p_DP$prior[c(14,19)] <- "weibull(2,1)"
+p_DP$prior[20] <- "dirichlet(2,2,2,2,2)" # covid
+p_DP$prior[21] <- "dirichlet(2,2)" # disabilities
+p_DP$prior[22:27] <- "dirichlet(2,2,2,2)" # education and DP
+p_DP$prior[28] <- "dirichlet(2,2,2)" #isolation
 
-m_fear <- brm(bform, data = df, prior = p_DP, sample_prior = "only")
+m_fear <- brm(bform, data = d, prior = p_DP, sample_prior = "only")
 pp_check(m_fear, type = "dens_overlay", nsamples = 100) 
 # Clearly our priors are spread out and nearly uniform on the outcome, i.e.,
 # we are a bit sceptical towards extreme values but that's ok.
 
-m_fear <- brm(bform, data = df, prior = p_DP, control = list(adapt_delta=0.95))
+m_fear <- brm(bform, data = d, prior = p_DP, control = list(adapt_delta=0.95, 
+                                                             max_treedepth=12))
 
 ################################################################################
 #
@@ -491,3 +384,166 @@ m_ERG <- brm(bform, data = d, family = cumulative, prior = p_ERG,
 # bar <- brm(bform_vi, data = d, family = cumulative)
 # 
 # loo_compare(loo(foo), loo(bar))
+
+
+# ################################################################################
+# #
+# # Junk
+# #
+# ################################################################################
+# # Add countries. We pick only the top-6 countries.
+# sort(prop.table(table(df$country)))
+# # If we pick top-6, i.e., countries with >1% of the sample size, while still
+# # having enough variance, we get,
+# # South Korea, United States, Italy, Brazil, Russia, and Germany
+# 
+# # Pick only rows with the top-6 countries (1223 observations)
+# df <- df[df$country == "Korea, South" | df$country == "United States" | 
+#            df$country == "Italy" | df$country == "Brazil" | 
+#            df$country == "Russia" | df$country == "Germany",]
+# 
+# # make sure we drop levels otherwise R won't follow
+# df$country <- droplevels(df$country) 
+# df$DeltaW3 <- droplevels(df$DeltaW3) # 11 disappeared so remove it
+# 
+# # Create K-1 categories among the top-6 countries
+# res <- model.matrix(~country, data = df)[, -1] # Brazil is the intercept
+# 
+# # We go from 1,..,5 starting with Germany (Brazil is intercept)
+# colnames(res) <- paste("C", 1:5, sep="") # C1,..,C15 as column names
+# 
+# # Add the matrix to our df
+# df <- cbind(df, res)
+# 
+# model_sem <- '# measurement model
+#   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+#   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+# 
+#   # structural model (regressions)
+#   DP_l ~ disabilities_c + education_c + genderF + C1 + C2 + C3 + C4 + C5
+#   fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c + genderF + C1 + C2 + C3 + C4 + C5
+#   Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s + genderF + C1 + C2 + C3 + C4 + C5
+#   DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c + genderF + C1 + C2 + C3 + C4 + C5
+#   DeltaPerformance_l ~ Erg_l + genderF + C1 + C2 + C3 + C4 + C5
+#   DeltaWellbeing_l ~ DeltaPerformance_l 
+# '
+# 
+# l_sem <- sem(model_sem, data = df)
+# summary(l_sem, fit.measures = TRUE)
+
+# model_cfa <- '
+#   DeltaWellbeing =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5 + DeltaP6 + DeltaP8
+#   Erg =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP =~ DP1 + DP2 + DP3 + DP4 + DP5
+# '
+# 
+# model_sem <- '# measurement model
+#   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+#   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+# 
+#   # structural model (regressions)
+#   DP_l ~ age_s + disabilities_c + education_c
+#   fear_s ~ DP_l + isolation_c + adultcohab_s + childcohab_s + covidstatus_c + disabilities_c + education_c + age_s
+#   Erg_l ~ DP_l + age_s + disabilities_c + education_c + isolation_c + adultcohab_s + childcohab_s + covidstatus_c + yearsofworkfromhomeexp_s
+#   DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c + education_c
+#   DeltaPerformance_l ~ Erg_l + DP_l + fear_s + yearsofworkfromhomeexp_s + childcohab_s + disabilities_c + education_c
+# '
+# ################################################################################
+# #
+# # Use lavaan w/o uncertainty propagation
+# # 
+# ################################################################################
+# l_cfa <- cfa(model_cfa, data = df)
+# summary(l_cfa)
+# 
+# l_sem <- sem(model_sem, data = df)
+# summary(l_sem, fit.measures = TRUE)
+# # All diagnostics passed
+# # CFI > 0.97 Comparative Fit Index
+# # RMSEA < 0.05 Root Mean Square Error of Approximation
+# # SRMR < 0.05 Standardized Root Mean Square Residual
+# 
+# #                         Estimate  Std.Err  z-value  P(>|z|)
+# # DP_l:
+# #   age_s                 0.031    0.021    1.444    0.149
+# # fear_s:
+# #   adultcohab_s          0.075    0.045    1.658    0.097
+# #   childcohab_s          0.084    0.047    1.779    0.075
+# #   education_c          -0.115    0.059   -1.945    0.052
+# #   age_s                -0.005    0.054   -0.087    0.930
+# # Erg_l:
+# #   disabilities_c       -0.015    0.057   -0.262    0.793
+# #   education_c           0.009    0.025    0.373    0.709
+# #   isolation_c           0.033    0.051    0.644    0.519
+# #   adultcohab_s         -0.033    0.021   -1.589    0.112
+# #   covidstatus_c        -0.047    0.031   -1.539    0.124
+# # DeltaWellbeing_l:
+# #   education_c          -0.023    0.030   -0.757    0.449
+# # DeltaPerformance_l:
+# #   DP_l                 -0.029    0.043   -0.665    0.506
+# #   fear_s                0.003    0.009    0.308    0.758
+# #   yrsfwrkfrmhmx_       -0.026    0.018   -1.412    0.158
+# #   childcohab_s          0.010    0.016    0.601    0.548
+# #   disabilities_c        0.077    0.045    1.705    0.088
+# #   education_c          -0.003    0.020   -0.134    0.894
+# 
+# # Let's try a model where we drop the above factors
+# model_sem <- '# measurement model
+#   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+#   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+# 
+#   # structural model (regressions)
+#   DP_l ~ disabilities_c + education_c
+#   fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c
+#   Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s
+#   DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c
+#   DeltaPerformance_l ~ Erg_l
+# '
+# 
+# l_sem <- sem(model_sem, data = df)
+# summary(l_sem, fit.measures = TRUE)
+# # lavaan WARNING: exogenous variable(s) declared as ordered in data: 
+# # disabilities_c education_c isolation_c covidstatus_c
+# # So we need to dummy code this also...
+# 
+# # Squared Multiple Correlations
+# # – A variable should be dropped if its R^2  is relatively lower than the others
+# # Identification of variables with squared multiple correlations relatively 
+# # lower than others could be automated by identifying variables two standard 
+# # deviations below the mean squared multiple correlations values.
+# 
+# # get squared multiple correlations
+# rSquared = inspect(l_sem, "rsquare")
+# # extract R^2 for IV
+# nLatentVariables <- 4
+# xVar = rSquared[1:(length(rSquared) - nLatentVariables)]
+# # which should be excluded?
+# names(xVar[xVar < (mean(xVar) - (2 * sd(xVar)))])
+# # returns
+# # fear_s
+# # in this case
+# 
+# model_sem <- '# measurement model
+#   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+#   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+# 
+#   # structural model (regressions)
+#   DP_l ~ disabilities_c + education_c
+#   fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c
+#   Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s
+#   DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c
+#   DeltaPerformance_l ~ Erg_l
+#   DeltaWellbeing_l ~ DeltaPerformance_l
+# '
+# 
+# l_sem <- sem(model_sem, data = df)
+# summary(l_sem, fit.measures = TRUE)
