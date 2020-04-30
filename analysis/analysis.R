@@ -1,4 +1,3 @@
-library(lavaan)
 library(brms)
 library(data.table)
 library(dplyr)
@@ -21,144 +20,6 @@ d$fear_s <- d$FearResilience
 
 d[, 11:47] <- as.data.frame(sapply(d[, 11:47], as.numeric))
 
-################################################################################
-#
-# cfa and sem
-#
-################################################################################
-# data shuffling for the SEM
-df <- data.frame(DeltaW1 = d$WHO5S1-d$WHO5B1 + 6)
-df$DeltaW2 <- d$WHO5S2-d$WHO5B2 + 6
-df$DeltaW3 <- d$WHO5S3-d$WHO5B3 + 6
-df$DeltaW4 <- d$WHO5S4-d$WHO5B4 + 6 
-df$DeltaW5 <- d$WHO5S5-d$WHO5B5 + 6
-df$DeltaP1 <- d$HPQS1-d$HPQB1 +5
-df$DeltaP2 <- d$HPQS2-d$HPQB2 +5
-df$DeltaP3 <- d$HPQS3-d$HPQB3 +5
-df$DeltaP4 <- d$HPQS4-d$HPQB4 +5
-df$DeltaP5 <- d$HPQS5-d$HPQB5 +5
-df$DeltaP6 <- d$HPQS6-d$HPQB6 +5
-df$DeltaP7 <- d$HPQS7-d$HPQB7 +5
-df$DeltaP8 <- d$HPQS8-d$HPQB8 +7
-df$Erg1 <- d$Erg1
-df$Erg2 <- d$Erg2
-df$Erg3 <- d$Erg3
-df$Erg4 <- d$Erg4
-df$Erg5 <- d$Erg5
-df$Erg6 <- d$Erg6
-df$DP1 <- d$DP1
-df$DP2 <- d$DP2
-df$DP3 <- d$DP3
-df$DP4 <- d$DP4
-df$DP5 <- d$DP5
-df$disabilities_c <- d$disabilities_c
-df$education_c <- d$education_c
-df$isolation_c <- d$Isolation
-df$covidstatus_c <- d$covidstatus_c
-df$fear_s <- d$FearResilience
-df$country <- d$Country # droplevels() later if cutting data
-df$gender <- d$Gender
-# continuous 
-df$age_s <- d$age_s
-df$adultcohab_s <- d$AdultCohabitants_s
-df$childcohab_s <- d$ChildCohabitants_s
-df$yearsofworkfromhomeexp_s <- d$YearsOfWorkFromHomeExperience_s
-
-df <- df[complete.cases(df),]
-
-df$country <- droplevels(df$country)
-
-df[,c("DeltaW1",
-      "DeltaW2",
-      "DeltaW3",
-      "DeltaW4",
-      "DeltaW5",
-      "DeltaP1",
-      "DeltaP2",
-      "DeltaP3",
-      "DeltaP4",
-      "DeltaP5",
-      "DeltaP6",
-      "DeltaP7",
-      "DeltaP8",
-      "Erg1",
-      "Erg2",
-      "Erg3",
-      "Erg4",
-      "Erg5",
-      "Erg6",
-      "DP1",
-      "DP2",
-      "DP3",
-      "DP4",
-      "DP5")] <-
-  lapply(df[,c("DeltaW1",
-               "DeltaW2",
-               "DeltaW3",
-               "DeltaW4",
-               "DeltaW5",
-               "DeltaP1",
-               "DeltaP2",
-               "DeltaP3",
-               "DeltaP4",
-               "DeltaP5",
-               "DeltaP6",
-               "DeltaP7",
-               "DeltaP8",
-               "Erg1",
-               "Erg2",
-               "Erg3",
-               "Erg4",
-               "Erg5",
-               "Erg6",
-               "DP1",
-               "DP2",
-               "DP3",
-               "DP4",
-               "DP5")], ordered)
-
-################################################################################
-#
-# SEM
-#
-################################################################################
-
-# Unfortunately this does not converge if we're using >2 genders
-# Let's focus on male/female since that's the majority of our sample, i.e., 
-# where our variability exists (18 cases removed)
-
-# For now, pick only F and M
-df <- df[df$gender == "Male" | df$gender == "Female",]
-
-# code female as 1
-df$genderF <- ifelse(df$gender == "Female", 1, 0) # Female == 1, Male == 0
-
-model_cfa <- '# measurement model
-  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
-  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
-  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
-  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5'
-
-l_cfa <- cfa(model_cfa, data = df, missing = "pairwise")
-summary(l_cfa, fit.measures=TRUE)
-
-model_sem <- '# measurement model
-  DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
-  DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
-  Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
-  DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
-
-  # structural model (regressions)
-  DP_l ~ disabilities_c + education_c + genderF
-  fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c + genderF
-  Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s + genderF
-  DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c + genderF
-  DeltaPerformance_l ~ Erg_l + genderF
-  DeltaWellbeing_l ~ DeltaPerformance_l 
-'
-
-l_sem <- sem(model_sem, data = df)
-summary(l_sem, fit.measures = TRUE)
 
 ################################################################################
 #
@@ -403,6 +264,145 @@ m_ERG <- brm(bform, data = d, family = cumulative, prior = p_ERG,
 # # Junk
 # #
 # ################################################################################
+# ################################################################################
+# #
+# # cfa and sem
+# #
+# ################################################################################
+# # data shuffling for the SEM
+# df <- data.frame(DeltaW1 = d$WHO5S1-d$WHO5B1 + 6)
+# df$DeltaW2 <- d$WHO5S2-d$WHO5B2 + 6
+# df$DeltaW3 <- d$WHO5S3-d$WHO5B3 + 6
+# df$DeltaW4 <- d$WHO5S4-d$WHO5B4 + 6 
+# df$DeltaW5 <- d$WHO5S5-d$WHO5B5 + 6
+# df$DeltaP1 <- d$HPQS1-d$HPQB1 +5
+# df$DeltaP2 <- d$HPQS2-d$HPQB2 +5
+# df$DeltaP3 <- d$HPQS3-d$HPQB3 +5
+# df$DeltaP4 <- d$HPQS4-d$HPQB4 +5
+# df$DeltaP5 <- d$HPQS5-d$HPQB5 +5
+# df$DeltaP6 <- d$HPQS6-d$HPQB6 +5
+# df$DeltaP7 <- d$HPQS7-d$HPQB7 +5
+# df$DeltaP8 <- d$HPQS8-d$HPQB8 +7
+# df$Erg1 <- d$Erg1
+# df$Erg2 <- d$Erg2
+# df$Erg3 <- d$Erg3
+# df$Erg4 <- d$Erg4
+# df$Erg5 <- d$Erg5
+# df$Erg6 <- d$Erg6
+# df$DP1 <- d$DP1
+# df$DP2 <- d$DP2
+# df$DP3 <- d$DP3
+# df$DP4 <- d$DP4
+# df$DP5 <- d$DP5
+# df$disabilities_c <- d$disabilities_c
+# df$education_c <- d$education_c
+# df$isolation_c <- d$Isolation
+# df$covidstatus_c <- d$covidstatus_c
+# df$fear_s <- d$FearResilience
+# df$country <- d$Country # droplevels() later if cutting data
+# df$gender <- d$Gender
+# # continuous 
+# df$age_s <- d$age_s
+# df$adultcohab_s <- d$AdultCohabitants_s
+# df$childcohab_s <- d$ChildCohabitants_s
+# df$yearsofworkfromhomeexp_s <- d$YearsOfWorkFromHomeExperience_s
+# 
+# df <- df[complete.cases(df),]
+# 
+# df$country <- droplevels(df$country)
+# 
+# df[,c("DeltaW1",
+#       "DeltaW2",
+#       "DeltaW3",
+#       "DeltaW4",
+#       "DeltaW5",
+#       "DeltaP1",
+#       "DeltaP2",
+#       "DeltaP3",
+#       "DeltaP4",
+#       "DeltaP5",
+#       "DeltaP6",
+#       "DeltaP7",
+#       "DeltaP8",
+#       "Erg1",
+#       "Erg2",
+#       "Erg3",
+#       "Erg4",
+#       "Erg5",
+#       "Erg6",
+#       "DP1",
+#       "DP2",
+#       "DP3",
+#       "DP4",
+#       "DP5")] <-
+#   lapply(df[,c("DeltaW1",
+#                "DeltaW2",
+#                "DeltaW3",
+#                "DeltaW4",
+#                "DeltaW5",
+#                "DeltaP1",
+#                "DeltaP2",
+#                "DeltaP3",
+#                "DeltaP4",
+#                "DeltaP5",
+#                "DeltaP6",
+#                "DeltaP7",
+#                "DeltaP8",
+#                "Erg1",
+#                "Erg2",
+#                "Erg3",
+#                "Erg4",
+#                "Erg5",
+#                "Erg6",
+#                "DP1",
+#                "DP2",
+#                "DP3",
+#                "DP4",
+#                "DP5")], ordered)
+# 
+# ################################################################################
+# #
+# # SEM
+# #
+# ################################################################################
+# 
+# # Unfortunately this does not converge if we're using >2 genders
+# # Let's focus on male/female since that's the majority of our sample, i.e., 
+# # where our variability exists (18 cases removed)
+# 
+# # For now, pick only F and M
+# df <- df[df$gender == "Male" | df$gender == "Female",]
+# 
+# # code female as 1
+# df$genderF <- ifelse(df$gender == "Female", 1, 0) # Female == 1, Male == 0
+# 
+# model_cfa <- '# measurement model
+#   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+#   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5'
+# 
+# l_cfa <- cfa(model_cfa, data = df, missing = "pairwise")
+# summary(l_cfa, fit.measures=TRUE)
+# 
+# model_sem <- '# measurement model
+#   DeltaWellbeing_l =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5 
+#   DeltaPerformance_l =~  DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+#   Erg_l =~ Erg1 + Erg2 + Erg3 + Erg4 + Erg5 + Erg6                      
+#   DP_l =~ DP1 + DP2 + DP3 + DP4 + DP5
+# 
+#   # structural model (regressions)
+#   DP_l ~ disabilities_c + education_c + genderF
+#   fear_s ~ DP_l + isolation_c + covidstatus_c + disabilities_c + genderF
+#   Erg_l ~ DP_l + age_s + childcohab_s + yearsofworkfromhomeexp_s + genderF
+#   DeltaWellbeing_l ~ Erg_l + DP_l + fear_s  + covidstatus_c + adultcohab_s + disabilities_c + genderF
+#   DeltaPerformance_l ~ Erg_l + genderF
+#   DeltaWellbeing_l ~ DeltaPerformance_l 
+# '
+# 
+# l_sem <- sem(model_sem, data = df)
+# summary(l_sem, fit.measures = TRUE)
+#
 # # Add countries. We pick only the top-6 countries.
 # sort(prop.table(table(df$country)))
 # # If we pick top-6, i.e., countries with >1% of the sample size, while still
