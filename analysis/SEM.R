@@ -198,7 +198,7 @@ summary(l_cfa, fit.measures=TRUE)
 estVals <- parameterEstimates(l_cfa, standardized = TRUE)
 estVals[estVals$op == "=~", "est"]
 estVals[estVals$op == "=~", "pvalue"]
-# NA (i.e., not available) for some variables, but does are the marker variables
+# NA (i.e., not available) for some variables, but those are the marker vars
 
 # are all factor loadings significant?
 pValues <- na.omit(estVals[estVals$op == "=~", "pvalue"])
@@ -318,7 +318,6 @@ m_sem <- '
           lang_n.LanguageRussian + lang_n.LanguageSpanish + 
           lang_n.LanguageTurkish + 
           exp_s + adultcohab_o + childcohab_o
-          #homeexp_s + 
   
   fear  ~ DP +
           gender_b + 
@@ -329,7 +328,6 @@ m_sem <- '
           lang_n.LanguageRussian + lang_n.LanguageSpanish + 
           lang_n.LanguageTurkish + 
           covidstatus_o + isolation_o + 
-          #edu_o + 
           disab_o + childcohab_o + dev_b
   
   DWell ~ ERG +
@@ -340,7 +338,6 @@ m_sem <- '
           lang_n.LanguageRussian + lang_n.LanguageSpanish + 
           lang_n.LanguageTurkish + 
           covidstatus_o + age_s 
-          #+ childcohab_o
   
   DPerf ~ ERG +
           lang_n.LanguageChinese + lang_n.LanguageEnglish + 
@@ -350,8 +347,6 @@ m_sem <- '
           lang_n.LanguageRussian + lang_n.LanguageSpanish + 
           lang_n.LanguageTurkish + 
           age_s + adultcohab_o
-          #disab_o + 
-          
 
   DWell ~ DPerf  
 '
