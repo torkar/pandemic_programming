@@ -29,5 +29,4 @@ If you are interested in ...
 * the code for our the main analysis in the paper then check `analysis/SEM.R`
 * asking questions given a posterior probability dsitribution see `analysis/BDAMLMs.R`
 * getting your hands on the data, please see the `data/` directory
-* how to clean and code the data from the questionnaires see `cleaning instructions/`
-* if you want to replicate this study, please see the questionnaires in several languages in `replication/questionnaires/`
+* if you want to replicate this study, please see `replication/`
