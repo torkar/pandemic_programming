@@ -8,7 +8,7 @@
 |   +-- SEM.R                   # Main analysis script for confirmatory factor analysis and structural 
 |                               # equation modeling
 |   +-- BDAMLMs.R               # Analysis script with Bayesian multilevel models (reviewers might want 
-|                                # to have more details; here's plenty of it)
+|                               # to have more details; here's plenty of it)
 +-- data/                       # Data
 |   +-- export_2020-04-16       # All data in CSV format
 +-- replication/                # If you want to redo the study yourself
