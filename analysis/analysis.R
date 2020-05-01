@@ -179,8 +179,7 @@ pp_check(m_fear, type = "dens_overlay", nsamples = 100)
 # Clearly our priors are spread out and nearly uniform on the outcome, i.e.,
 # we are a bit sceptical towards extreme values but that's ok.
 
-m_fear <- brm(bform, data = d, prior = p_DP, control = list(adapt_delta=0.95, 
-                                                             max_treedepth=12))
+m_fear <- brm(bform, data = d, prior = p_DP, control = list(adapt_delta=0.99))
 
 ################################################################################
 #
