@@ -4,6 +4,8 @@ library(lavaan)
 library(data.table)
 library(semPlot)
 
+# load our data set. If you've loaded `pandemic_programming.Rproj` in `RStudio` 
+# then you're set
 d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
            na.strings=c("", "null", "NA", -99))
 
@@ -26,25 +28,25 @@ d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE,
 # Remove 18 cases (16 "Not answering", and 2 "Other")
 d <- d[d$Gender == "Female" | d$Gender == "Male", ]
 
-# Let's move variables that we have checked to a new df so we have the original 
-# data untouched from now on. All predictors in small letters, suffixes are
+# Let's move variables that we have checked to a new df so we keep the original 
+# data untouched. All predictors in small letters, suffixes are
 # _n = nominal, _o = ordered, _s = scaled, _b = binary
 df <- data.frame(
-  gender_b = ifelse(d$Gender == "Female", 1, 0),
+  gender_b = ifelse(d$Gender == "Female", 1, 0), # code as binary
 
   # covidstatus is Likert 0,..,5, we need to make it 1,..,6 (reg. for lavaan)
   covidstatus_o = d$COVIDStatus + 1,
-  isolation_o = d$Isolation,
-  exp_s = scale(d$YearsOfExperience),
+  isolation_o = d$Isolation, #ok
+  exp_s = scale(d$YearsOfExperience), # scale var, i.e., (x -\bar{x})/sd(x)
   homeexp_s = scale(d$YearsOfWorkFromHomeExperience),
-  fulltime_b = d$Fulltime,
-  edu_o = d$Education + 1,
-  orgsize_o = d$OrganizationSize, # alrewady >= 1
+  fulltime_b = d$Fulltime, # binary already
+  edu_o = d$Education + 1, # ok
+  orgsize_o = d$OrganizationSize, # already starts at 1
   disab_o = d$Disabilities + 1,
   adultcohab_o = d$AdultCohabitants + 1,
   childcohab_o = d$ChildCohabitants + 1,
-  dev_b = d$RolesIncludeDeveloper,
-  fear = d$FearResilience, # alrady basically scaled
+  dev_b = d$RolesIncludeDeveloper, # binary already
+  fear = d$FearResilience, # alrady 'basically' scaled
   
   # Age is a tricky one. From the questionnaire it's binned into 11 categories,
   # so we can either say it's nominal, ordered, or scale it.
