@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/257594337.svg)](https://zenodo.org/badge/latestdoi/257594337)
 # Replication package for the manuscript *Pandemic Programming*
 
-The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed (here)[Rmd/].
+The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed [here](Rmd/Analysis-for-PP-html).
 
 ## Project structure
 
