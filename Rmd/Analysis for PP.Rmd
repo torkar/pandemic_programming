@@ -23,12 +23,13 @@ output:
 
 First, we will check that all variables are correctly coded. Second, we will check for non-identifiability. Third, we will run a confirmatory factor analysis. Fourth, we will, in iterations, check the predictive power of all exogeneous covariates (predictors), and remove any that have no or very little predictive power (need to do that due to many being ordered). Fifth, we'll check SEM diagnostics to see that the model can be trusted.
 
-Let's start by loading `lavaan`, for developing our structural equation model (SEM), `data.table`, for loading our data, and `semPlot` in case we want to plot our SEM.
+Let's start by loading `lavaan`, for developing our structural equation model (SEM), `data.table`, for loading our data, `semPlot` in case we want to plot our SEM, and `devtools` to print our computing environment.
 
 ```{r results = FALSE, message=FALSE, warning=FALSE}
 library(lavaan)
 library(data.table)
 library(semPlot)
+library(devtools)
 d <- fread("../data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
            na.strings=c("", "null", "NA", -99))
 ```
@@ -317,4 +318,12 @@ To summarize, `SRMR`$\lt 0.8$  and `RMSEA`$= 0.051$, is generally considered a g
 
 Now one can conduct inferences on our SEM, which you can find in the manuscript.
 
+# Original computing environment
+```{r}
+writeLines(readLines(file.path(Sys.getenv("HOME"), ".R/Makevars")))
+```
+
+```{r}
+devtools::session_info("rstan")
+```
 # References
