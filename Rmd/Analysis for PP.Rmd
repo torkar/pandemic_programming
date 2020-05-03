@@ -29,7 +29,7 @@ Let's start by loading `lavaan`, for developing our structural equation model (S
 library(lavaan)
 library(data.table)
 library(semPlot)
-d <- fread("../../data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
+d <- fread("../data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
            na.strings=c("", "null", "NA", -99))
 ```
 
@@ -203,9 +203,9 @@ res_cfa <- cfa(m_cfa, data = df)
 summary(res_cfa, fit.measures=TRUE)
 ```
 
-The summary shows that $\chi^2$, `CFI/TLI`, `SRMR` look ok. For $\chi^2$ we want the test statistic for the `Model Test User Model` divided by the number of free parameters to be $\gt 2$. `CFI/TLI` should all $\gt 0.95$. `SRMR` and `RMSEA`should be $\lt 0.05$.^[https://paolotoffanin.wordpress.com/2018/05/19/beginning-with-sem-in-lavaan/]
+The summary shows that $\chi^2$, `CFI/TLI`, `SRMR` look ok. For $\chi^2$ we want the test statistic for the `Model Test User Model` divided by the number of free parameters to be $\gt 2$. `CFI/TLI` should be $\gt 0.95$ and `SRMR` and `RMSEA`should be $\lt 0.05$.^[https://paolotoffanin.wordpress.com/2018/05/19/beginning-with-sem-in-lavaan/]
 
-`RMSEA` is slightly above the threshold but that is not strange considering our sample size $n=1377$.
+`RMSEA` is slightly above the cutoff criteria but that is not strange considering our sample size $n=1377$.
 
 Next, let's check our estimations,
 ```{r}
@@ -313,8 +313,8 @@ res_sem <- sem(m_sem, data = df)
 summary(res_sem, fit.measures = TRUE)
 ```
 
-To summarize, `SRMR`$\lt 0.8$  and `RMSEA` around $0.051$, is generally considered a good fit given our sample size [@HuB99sem]. `CFI/TLI` are both $\gt 0.95$.
+To summarize, `SRMR`$\lt 0.8$  and `RMSEA`$= 0.051$, is generally considered a good fit given our sample size [@HuB99sem]. `CFI/TLI` are both $\gt 0.95$.
 
-Now one can conduct inferences on our SEM.
+Now one can conduct inferences on our SEM, which you can find in the manuscript.
 
 # References

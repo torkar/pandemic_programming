@@ -1,6 +1,8 @@
 [![DOI](https://zenodo.org/badge/257594337.svg)](https://zenodo.org/badge/latestdoi/257594337)
 # Replication package for the manuscript *Pandemic Programming*
 
+The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed (here)[Rmd/].
+
 ## Project structure
 
 ```
@@ -21,7 +23,9 @@
     +-- Questionnaires/
     |   +-- *.pdf               # Questionnaire in 12 languages
 |
-+-- Rmd/                       # RMarkup script
++-- Rmd/                       # `RMarkup`
+|   +-- Analysis for PP.Rmd    # The `Rmd`, which you can knit in `RStudio`
+|   +-- Analysis-for-PP.html   # The html generated from the Rmd once knitted
 
 ```
 
