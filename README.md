@@ -1,23 +1,24 @@
 [![DOI](https://zenodo.org/badge/257594337.svg)](https://zenodo.org/badge/latestdoi/257594337)
 # Replication package for the manuscript *Pandemic Programming*
 
-The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed [here](http://htmlpreview.github.com/?https://github.com/torkar/pandemic_programming/blob/master/Rmd/Analysis-for-PP.html).
+The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed [here](https://torkar.github.io/Pandemic_Programming/).
 
 ## Project structure
 
 ```
 . 
-+-- Rmd/                        # `RMarkup`
++-- Rmd/                        # 
 |   +-- Analysis for PP.Rmd     # The `Rmd`, which you can knit in `RStudio`
-|   +-- Analysis-for-PP.html    # The html generated from the `Rmd once knitted
-+-- analysis/                   # Executable `R` scripts
++-- analysis/                   # 
 |   +-- SEM.R                   # Main analysis script for confirmatory factor analysis and structural 
 |                               # equation modeling (see also `Rmd/`)
 |   +-- BDAMLMs.R               # Analysis script with Bayesian multilevel models (reviewers might want 
 |                               # to have more details; here's plenty of it)
 +-- data/                       # Data
 |   +-- export_2020-04-16.csv   # All data in `CSV` format
-+-- replication/                # If you want to redo the study yourself
++-- docs/
+|   +-- index.html              # The html generated from the `Rmd` once knitted
++-- replication/                # 
 |   +-- cleaning instructions/  # Instructions for how to clean/recode questionnaire data
     |   +-- clean.docx          # Cleaning instructions
     |   +-- recode.xlsx         # Recode instructions
@@ -33,7 +34,7 @@ If you are interested in ...
 
 * the code for our the main analysis in the paper then check `analysis/SEM.R`
 * running the code then please have a look at `Rmd/` instead, where an `Rmd` file can be executed
-* the `html` when running the `Rmd` file see [here](http://htmlpreview.github.com/?https://github.com/torkar/pandemic_programming/blob/master/Rmd/Analysis-for-PP.html)
+* the `html` when running the `Rmd` file see [here](https://torkar.github.io/Pandemic_Programming/)
 * asking questions given a posterior probability dsitribution see `analysis/BDAMLMs.R`
 * getting your hands on the data, please see the `data/` directory
 * if you want to replicate this study, please see `replication/`
