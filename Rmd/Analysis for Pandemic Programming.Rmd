@@ -1,0 +1,320 @@
+---
+title: "Structural equation model for the manuscript *Pandemic Programming*"
+subtitle: 
+author: "R. Torkar, S. Baltes, and P. Ralph"
+site: bookdown::bookdown_site
+documentclass: book
+classoption: oneside, openany
+bibliography: [./bibliography.bib]
+biblio-style: apalike
+link-citations: yes
+fontsize: 10pt
+monofont: "Lucida Console"
+subparagraph: yes
+always_allow_html: yes
+output:
+  html_document:
+    toc: true
+    toc_float: true
+
+---
+
+# Introduction {#intro}
+
+First, we will check that all variables are correctly coded. Second, we will check for non-identifiability. Third, we will run a confirmatory factor analysis. Fourth, we will, in iterations, check the predictive power of all exogeneous covariates (predictors), and remove any that have no or very little predictive power (need to do that due to many being ordered). Fifth, we'll check SEM diagnostics to see that the model can be trusted.
+
+Let's start by loading `lavaan`, for developing our structural equation model (SEM), `data.table`, for loading our data, and `semPlot` in case we want to plot our SEM.
+
+```{r results = FALSE, message=FALSE, warning=FALSE}
+library(lavaan)
+library(data.table)
+library(semPlot)
+d <- fread("../../data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
+           na.strings=c("", "null", "NA", -99))
+```
+
+# Check variables
+
+Gender has way too few data points outside male/female so keep only those. Remove 18 cases (16 "Not answering", and 2 "Other")
+```{r}
+d <- d[d$Gender == "Female" | d$Gender == "Male", ]
+nrow(d)
+```
+The data we will use will be stored in a new data frame `df`, so that we keep the original data ($n=2194$) untouched. All predictors will be in small letters and the suffixes on the variable names (always good practice to do this) will be:
+
+* `_n` nominal
+* `_o` ordered
+* `_s` scaled
+* `_b` binary
+
+Under the hood we now format data correctly, and in the end we have a new data frame `df`, which only contains complete cases.
+
+```{r include = FALSE}
+df <- data.frame(
+  gender_b = ifelse(d$Gender == "Female", 1, 0), # code as binary
+
+  # covidstatus is Likert 0,..,5, we need to make it 1,..,6 (reg. for lavaan)
+  covidstatus_o = d$COVIDStatus + 1,
+  isolation_o = d$Isolation, #ok
+  exp_s = scale(d$YearsOfExperience), # scale var, i.e., (x -\bar{x})/sd(x)
+  homeexp_s = scale(d$YearsOfWorkFromHomeExperience),
+  fulltime_b = d$Fulltime, # binary already
+  edu_o = d$Education + 1, # ok
+  orgsize_o = d$OrganizationSize, # already starts at 1
+  disab_o = d$Disabilities + 1,
+  adultcohab_o = d$AdultCohabitants + 1,
+  childcohab_o = d$ChildCohabitants + 1,
+  dev_b = d$RolesIncludeDeveloper, # binary already
+  fear = d$FearResilience, # alrady 'basically' scaled
+  
+  # Age is a tricky one. From the questionnaire it's binned into 11 categories,
+  # so we can either say it's nominal, ordered, or scale it.
+  # I would argue that it can't be nominal since there exists an order, so then
+  # we need to decide between ordered categorical or scale it
+  # Either way works, and for sampling purposes it might even be better to
+  # scale it (if we conduct MCMC later).
+  age_s = scale(d$Age),
+  
+  # Our outcomes (ordered categorical) seem to be ok
+  # WHO5S[1:6]
+  # WHO5B[1:6]
+  # HPQB1[1:8]
+  # HPQS1[1:8]
+  # DP[1:5]
+  # Erg[1:6]
+  #
+  # but we need to look at the differences reg. before/after corona. This
+  # concerns our outcomes wellbeing and productivity only.
+  # Make sure that the scale starts at 1 (req for lavaan)
+  DeltaW1 = (d$WHO5S1 - d$WHO5B1) + 6,
+  DeltaW2 = (d$WHO5S2 - d$WHO5B2) + 6,
+  DeltaW3 = (d$WHO5S3 - d$WHO5B3) + 6,
+  DeltaW4 = (d$WHO5S4 - d$WHO5B4) + 5,
+  DeltaW5 = (d$WHO5S5 - d$WHO5B5) + 6,
+  DeltaP1 = (d$HPQS1 - d$HPQB1 ) + 5,
+  DeltaP2 = (d$HPQS2 - d$HPQB2) + 5,
+  DeltaP3 = (d$HPQS3 - d$HPQB3) + 5,
+  DeltaP4 = (d$HPQS4 - d$HPQB4) + 5,
+  DeltaP5 = (d$HPQS5 - d$HPQB5) + 5,
+  DeltaP6 = (d$HPQS6 - d$HPQB6) + 5,
+  DeltaP7 = (d$HPQS7 - d$HPQB7) + 5,
+  DeltaP8 = (d$HPQS8 - d$HPQB8) + 7,
+  # now also add the other two outcome categories (all checked)
+  DP1 = d$DP1,
+  DP2 = d$DP2,
+  DP3 = d$DP3,
+  DP4 = d$DP4,
+  DP5 = d$DP5,
+  ERG1 = d$Erg1,
+  ERG2 = d$Erg2,
+  ERG3 = d$Erg3,
+  ERG4 = d$Erg4,
+  ERG5 = d$Erg5,
+  ERG6 = d$Erg6
+)
+
+df <- df[complete.cases(df), ]
+
+# Next make all our latent variables ordered
+df[,c("DeltaW1",
+      "DeltaW2",
+      "DeltaW3",
+      "DeltaW4",
+      "DeltaW5",
+      "DeltaP1",
+      "DeltaP2",
+      "DeltaP3",
+      "DeltaP4",
+      "DeltaP5",
+      "DeltaP6",
+      "DeltaP7",
+      "DeltaP8",
+      "ERG1",
+      "ERG2",
+      "ERG3",
+      "ERG4",
+      "ERG5",
+      "ERG6",
+      "DP1",
+      "DP2",
+      "DP3",
+      "DP4",
+      "DP5")] <-
+  lapply(df[,c("DeltaW1",
+               "DeltaW2",
+               "DeltaW3",
+               "DeltaW4",
+               "DeltaW5",
+               "DeltaP1",
+               "DeltaP2",
+               "DeltaP3",
+               "DeltaP4",
+               "DeltaP5",
+               "DeltaP6",
+               "DeltaP7",
+               "DeltaP8",
+               "ERG1",
+               "ERG2",
+               "ERG3",
+               "ERG4",
+               "ERG5",
+               "ERG6",
+               "DP1",
+               "DP2",
+               "DP3",
+               "DP4",
+               "DP5")], ordered)
+
+```
+
+Let's examine our `df`,
+```{r}
+str(df)
+```
+
+So we have $n=1377$, a number of predictors and outcomes, and they should now be correctly formatted.
+
+## Non-identifiability
+
+For all our predictors, and the corresponding outcomes, we analyzed non-identifiability. It would take too much space to show all these steps but, in short, for each outcome check the corresponding covariates by creating a model matrix (without the intercept).
+
+The model matrix is then QR decomposed and we check for non-identifiability on the decomposed matrix. This can be done qualitatively, by examining pair plots.^[https://www.martinmodrak.cz/2018/05/14/identifying-non-identifiability/] However, one can also do this quantitatively.^[https://discourse.mc-stan.org/t/blog-post-identifying-non-identifiability/4201/3]
+
+# Confirmatory factor analysis
+
+Below we list our measurement model for the SEM,
+```{r}
+m_cfa <- '
+  DWell =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + 
+           DeltaW5
+  DPerf =~ DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + 
+           DeltaP5 + DeltaP6 + DeltaP8
+  DP    =~ DP1 + DP2 + DP3 + DP4 + DP5
+  ERG   =~ ERG1 + ERG2 + ERG3 + ERG4 + ERG5 + ERG6
+'
+```
+
+After $= \sim$ we list the exogenous variables that models the latent variable on the left-hand side. `DWell`, is our latent variable of wellbeing (before/after the pandemic), `DPerf`, is our latent variable of performance (before/after), `DP`is our latent variable for disaster preparedness, and `ERG`, latent variable for ergonomics. The exogenous variables (predictors) are all ordered categorical in nature, i.e., Likert scale.
+
+Let's conduct confirmatory factor analysis,
+
+```{r cache=TRUE}
+res_cfa <- cfa(m_cfa, data = df)
+summary(res_cfa, fit.measures=TRUE)
+```
+
+The summary shows that $\chi^2$, `CFI/TLI`, `SRMR` look ok. For $\chi^2$ we want the test statistic for the `Model Test User Model` divided by the number of free parameters to be $\gt 2$. `CFI/TLI` should all $\gt 0.95$. `SRMR` and `RMSEA`should be $\lt 0.05$.^[https://paolotoffanin.wordpress.com/2018/05/19/beginning-with-sem-in-lavaan/]
+
+`RMSEA` is slightly above the threshold but that is not strange considering our sample size $n=1377$.
+
+Next, let's check our estimations,
+```{r}
+estVals <- parameterEstimates(res_cfa, standardized = TRUE)
+estVals[estVals$op == "=~", "est"]
+```
+
+and our factor loadings, which should be $0$,
+
+```{r}
+estVals[estVals$op == "=~", "pvalue"]
+```
+
+look good.^[The `NA`s are for marker variables so nothing to worry about.]
+
+Next, are the factor loadings signficant?
+
+```{r}
+pValues <- na.omit(estVals[estVals$op == "=~", "pvalue"])
+print(
+  paste0(
+    if(sum(pValues < .05) != length(pValues)){"NOT "}, 
+    "All factor loadings significant"))
+```
+
+Finally, here are the intercorrelations from the confirmatory factor analysis,
+
+```{r}
+inspect(res_cfa, "cor.lv")
+```
+
+# Structural equation modelling
+
+Here is the full structural (regression) model (with all predictors),^[Detailed explanations of each variable can be found in the manuscript.]
+
+```{r}
+m_full <- '
+DWell =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 +DeltaW5
+DPerf =~ DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + DeltaP8
+DP    =~ DP1 + DP2 + DP3 + DP4 + DP5
+ERG   =~ ERG1 + ERG2 + ERG3 + ERG4 + ERG5 + ERG6
+  
+DP    ~ gender_b + covidstatus_o + isolation_o + exp_s + homeexp_s + 
+        fulltime_b + age_s + edu_o + orgsize_o + disab_o + adultcohab_o + 
+        childcohab_o + dev_b
+  
+ERG   ~ gender_b + covidstatus_o + isolation_o + exp_s + homeexp_s + 
+        fulltime_b + age_s + edu_o + orgsize_o + disab_o + adultcohab_o + 
+        childcohab_o + dev_b
+  
+fear  ~ DP + gender_b + covidstatus_o + isolation_o + exp_s + homeexp_s + 
+        fulltime_b + age_s + edu_o + orgsize_o + disab_o + adultcohab_o + 
+        childcohab_o + dev_b
+  
+DWell ~ ERG + fear + DP +
+        gender_b + covidstatus_o + isolation_o + exp_s + homeexp_s + 
+        fulltime_b + age_s + edu_o + orgsize_o + disab_o + adultcohab_o + 
+        childcohab_o + dev_b
+  
+DPerf ~ ERG + fear + DP +
+        gender_b + covidstatus_o + isolation_o + exp_s + homeexp_s + 
+        fulltime_b + age_s + edu_o + orgsize_o + disab_o + adultcohab_o + 
+        childcohab_o + dev_b
+
+DWell ~ DPerf  
+'
+```
+Variables starting with a capital letter indicates a latent variable.
+
+Run the equations and show summary,
+```{r cache=TRUE}
+res_full <- sem(m_full, data = df)
+summary(res_full, fit.measures = TRUE) 
+```
+We see some diagnostics starting to move away from the thresholds, but this is the full model so not strange. Let's remove all covariates with $p \gt 0.1$,
+
+```{r}
+m_sem <- '
+DWell =~ DeltaW1 + DeltaW2 + DeltaW3 + DeltaW4 + DeltaW5
+DPerf =~ DeltaP1 + DeltaP2 + DeltaP3 + DeltaP4 + DeltaP5  + DeltaP6 + 
+         DeltaP8
+DP    =~ DP1 + DP2 + DP3 + DP4 + DP5
+ERG   =~ ERG1 + ERG2 + ERG3 + ERG4 + ERG5 + ERG6
+  
+DP    ~ covidstatus_o + edu_o + disab_o + adultcohab_o
+  
+ERG   ~ gender_b + homeexp_s + disab_o + adultcohab_o + childcohab_o
+  
+fear  ~ DP +
+        gender_b + covidstatus_o + isolation_o + edu_o + orgsize_o + 
+        disab_o + childcohab_o + dev_b
+  
+DWell ~ ERG + fear + DP + covidstatus_o + exp_s + age_s
+  
+DPerf ~ ERG + fear + DP + age_s + disab_o + adultcohab_o
+
+DWell ~ DPerf  
+'
+```
+
+and then run the equations again,
+
+```{r cache=TRUE}
+res_sem <- sem(m_sem, data = df)
+summary(res_sem, fit.measures = TRUE)
+```
+
+To summarize, `SRMR`$\lt 0.8$  and `RMSEA` around $0.051$, is generally considered a good fit given our sample size [@HuB99sem]. `CFI/TLI` are both $\gt 0.95$.
+
+Now one can conduct inferences on our SEM.
+
+# References
