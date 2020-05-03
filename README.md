@@ -9,14 +9,14 @@ The replication package also consists of a more user friendly overview of the st
 . 
 +-- Rmd/                        # `RMarkup`
 |   +-- Analysis for PP.Rmd     # The `Rmd`, which you can knit in `RStudio`
-|   +-- Analysis-for-PP.html    # The html generated from the Rmd once knitted
+|   +-- Analysis-for-PP.html    # The html generated from the `Rmd once knitted
 +-- analysis/                   # Executable `R` scripts
 |   +-- SEM.R                   # Main analysis script for confirmatory factor analysis and structural 
-|                               # equation modeling
+|                               # equation modeling (see also `Rmd/`)
 |   +-- BDAMLMs.R               # Analysis script with Bayesian multilevel models (reviewers might want 
 |                               # to have more details; here's plenty of it)
 +-- data/                       # Data
-|   +-- export_2020-04-16       # All data in CSV format
+|   +-- export_2020-04-16.csv   # All data in `CSV` format
 +-- replication/                # If you want to redo the study yourself
 |   +-- cleaning instructions/  # Instructions for how to clean/recode questionnaire data
     |   +-- clean.docx          # Cleaning instructions
@@ -25,7 +25,6 @@ The replication package also consists of a more user friendly overview of the st
     |   +-- *.pdf               # Questionnaire in 12 languages
 +-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
 +-- README.md                   # This file
-
 ```
 
 ## Where to start?
