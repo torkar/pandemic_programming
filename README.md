@@ -1,12 +1,15 @@
 [![DOI](https://zenodo.org/badge/257594337.svg)](https://zenodo.org/badge/latestdoi/257594337)
 # Replication package for the manuscript *Pandemic Programming*
 
-The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed [here](Rmd/Analysis-for-PP-html).
+The replication package also consists of a more user friendly overview of the structural equation modeling. The latest version can be viewed [here](https://github.com/torkar/pandemic_programming/blob/master/Rmd/Analysis-for-PP.html).
 
 ## Project structure
 
 ```
 . 
++-- Rmd/                        # `RMarkup`
+|   +-- Analysis for PP.Rmd     # The `Rmd`, which you can knit in `RStudio`
+|   +-- Analysis-for-PP.html    # The html generated from the Rmd once knitted
 +-- analysis/                   # Executable `R` scripts
 |   +-- SEM.R                   # Main analysis script for confirmatory factor analysis and structural 
 |                               # equation modeling
@@ -14,18 +17,14 @@ The replication package also consists of a more user friendly overview of the st
 |                               # to have more details; here's plenty of it)
 +-- data/                       # Data
 |   +-- export_2020-04-16       # All data in CSV format
-+-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
-+-- README.md                   # This file
 +-- replication/                # If you want to redo the study yourself
 |   +-- cleaning instructions/  # Instructions for how to clean/recode questionnaire data
     |   +-- clean.docx          # Cleaning instructions
     |   +-- recode.xlsx         # Recode instructions
     +-- Questionnaires/
     |   +-- *.pdf               # Questionnaire in 12 languages
-|
-+-- Rmd/                       # `RMarkup`
-|   +-- Analysis for PP.Rmd    # The `Rmd`, which you can knit in `RStudio`
-|   +-- Analysis-for-PP.html   # The html generated from the Rmd once knitted
++-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
++-- README.md                   # This file
 
 ```
 
