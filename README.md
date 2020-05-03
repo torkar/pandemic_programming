@@ -12,14 +12,17 @@
 |                               # to have more details; here's plenty of it)
 +-- data/                       # Data
 |   +-- export_2020-04-16       # All data in CSV format
++-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
++-- README.md                   # This file
 +-- replication/                # If you want to redo the study yourself
 |   +-- cleaning instructions/  # Instructions for how to clean/recode questionnaire data
     |   +-- clean.docx          # Cleaning instructions
     |   +-- recode.xlsx         # Recode instructions
     +-- Questionnaires/
     |   +-- *.pdf               # Questionnaire in 12 languages
-+-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
-+-- README.md                   # This file
+|
++-- Rmd/                       # RMarkup script
+
 ```
 
 ## Where to start?
