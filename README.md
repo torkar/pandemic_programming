@@ -23,8 +23,8 @@ The replication package also consists of a more user friendly overview of the st
     |   +-- recode.xlsx         # Recode instructions
     +-- Questionnaires/
     |   +-- *.pdf               # Questionnaire in 12 languages
-+-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
 +-- README.md                   # This file
++-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
 ```
 
 ## Where to start?
