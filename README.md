@@ -14,7 +14,7 @@ The replication package also consists of a more user friendly overview of the st
 |                               # equation modeling (see also `Rmd/`)
 |   +-- BDAMLMs.R               # Analysis script with Bayesian multilevel models (reviewers might want 
 |                               # to have more details; here's plenty of it)
-+-- data/                       # Data
++-- data/
 |   +-- export_2020-04-16.csv   # All data in `CSV` format
 +-- docs/
 |   +-- index.html              # The html generated from the `Rmd` once knitted
