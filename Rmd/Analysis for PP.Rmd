@@ -319,11 +319,8 @@ To summarize, `SRMR`$\lt 0.8$  and `RMSEA`$= 0.051$, is generally considered a g
 Now one can conduct inferences on our SEM, which you can find in the manuscript.
 
 # Original computing environment
-```{r}
-writeLines(readLines(file.path(Sys.getenv("HOME"), ".R/Makevars")))
-```
 
 ```{r}
-devtools::session_info("rstan")
+devtools::session_info("lavaan")
 ```
 # References
