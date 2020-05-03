@@ -36,8 +36,9 @@ d <- fread("../data/export_2020-04-16.csv", stringsAsFactors=TRUE,
 
 # Check variables
 
-Gender has way too few data points outside male/female so keep only those. Remove 18 cases (16 "Not answering", and 2 "Other")
+Gender has way too few data points outside male/female so keep only those. Remove 31 cases (13 `NA`s, 16 non-binary, and 2 "Other").
 ```{r}
+sort(table(d$Gender, useNA="always"), decreasing=TRUE)
 d <- d[d$Gender == "Female" | d$Gender == "Male", ]
 nrow(d)
 ```

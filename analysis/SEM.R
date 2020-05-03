@@ -26,7 +26,9 @@ d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE,
 
 # Gender has way too few data points outside male/female so keep only those.
 # Remove 18 cases (16 "Not answering", and 2 "Other")
+sort(table(d$Gender, useNA="always"), decreasing=TRUE)
 d <- d[d$Gender == "Female" | d$Gender == "Male", ]
+nrow(d)
 
 # Let's move variables that we have checked to a new df so we keep the original 
 # data untouched. All predictors in small letters, suffixes are

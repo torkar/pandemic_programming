@@ -1541,7 +1541,11 @@ d &lt;- fread(&quot;../data/export_2020-04-16.csv&quot;, stringsAsFactors=TRUE,
 </div>
 <div id="check-variables" class="section level1">
 <h1>Check variables</h1>
-<p>Gender has way too few data points outside male/female so keep only those. Remove 18 cases (16 “Not answering”, and 2 “Other”)</p>
+<p>Gender has way too few data points outside male/female so keep only those. Remove 31 cases (13 <code>NA</code>s, 16 non-binary, and 2 “Other”).</p>
+<pre class="r"><code>sort(table(d$Gender, useNA=&quot;always&quot;), decreasing=TRUE)</code></pre>
+<pre><code>## 
+##   Male Female     NB   &lt;NA&gt;  Other 
+##   1800    394     16     13      2</code></pre>
 <pre class="r"><code>d &lt;- d[d$Gender == &quot;Female&quot; | d$Gender == &quot;Male&quot;, ]
 nrow(d)</code></pre>
 <pre><code>## [1] 2194</code></pre>
