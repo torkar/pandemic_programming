@@ -8,9 +8,6 @@ d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE,
            na.strings=c("", "null", "NA", -99))
 # cleanup some stuff
 d$age_s <- scale(as.integer(d$Age))
-d$disabilities_c <- as.integer(d$Disabilities) + 1
-d$covidstatus_c <- as.integer(d$COVIDStatus) + 1
-d$education_c <- as.integer(d$Education) + 1
 d$AdultCohabitants_s <- scale(as.numeric(d$AdultCohabitants) + 1)
 d$ChildCohabitants_s <- scale(as.numeric(d$ChildCohabitants) + 1)
 d$YearsOfExperience_s <- scale(as.numeric(d$YearsOfExperience)) #actually months
