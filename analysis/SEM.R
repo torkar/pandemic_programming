@@ -37,14 +37,14 @@ df <- data.frame(
   gender_b = ifelse(d$Gender == "Female", 1, 0), # code as binary
 
   # covidstatus is Likert 0,..,5, we need to make it 1,..,6 (reg. for lavaan)
-  covidstatus_o = d$COVIDStatus + 1,
+  covidstatus_o = d$COVIDStatus,
   isolation_o = d$Isolation, #ok
   exp_s = scale(d$YearsOfExperience), # scale var, i.e., (x -\bar{x})/sd(x)
   homeexp_s = scale(d$YearsOfWorkFromHomeExperience),
   fulltime_b = d$Fulltime, # binary already
-  edu_o = d$Education + 1, # ok
+  edu_o = d$Education, # ok
   orgsize_o = d$OrganizationSize, # already starts at 1
-  disab_o = d$Disabilities + 1,
+  disab_o = d$Disabilities,
   adultcohab_o = d$AdultCohabitants + 1,
   childcohab_o = d$ChildCohabitants + 1,
   dev_b = d$RolesIncludeDeveloper, # binary already
