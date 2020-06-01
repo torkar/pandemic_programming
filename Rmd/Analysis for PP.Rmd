@@ -42,7 +42,7 @@ sort(table(d$Gender, useNA="always"), decreasing=TRUE)
 d <- d[d$Gender == "Female" | d$Gender == "Male", ]
 nrow(d)
 ```
-The data we will use will be stored in a new data frame `df`, so that we keep the original data ($n=2194$) untouched. All predictors will be in small letters and the suffixes on the variable names (always good practice to do this) will be:
+The data we will use will be stored in a new data frame `df`, so that we keep the original data ($n=2413$) untouched. All predictors will be in small letters and the suffixes on the variable names (always good practice to do this) will be:
 
 * `_n` nominal
 * `_o` ordered
