@@ -30,13 +30,13 @@ library(lavaan)
 library(data.table)
 library(semPlot)
 library(devtools)
-d <- fread("../data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
+d <- fread("../data/export_2020-05-29.csv", stringsAsFactors=TRUE, 
            na.strings=c("", "null", "NA", -99))
 ```
 
 # Check variables
 
-Gender has way too few data points outside male/female so keep only those. Remove 31 cases (13 `NA`s, 16 non-binary, and 2 "Other").
+Gender has way too few data points outside male/female so keep only those. Remove 33 cases (15 `NA`s, 16 non-binary, and 2 Other).
 ```{r}
 sort(table(d$Gender, useNA="always"), decreasing=TRUE)
 d <- d[d$Gender == "Female" | d$Gender == "Male", ]
@@ -174,13 +174,11 @@ Let's examine our `df`,
 str(df)
 ```
 
-So we have $n=1377$, a number of predictors and outcomes, and they should now be correctly formatted.
+So we have $n=1511$, a number of predictors and outcomes, and they should now be correctly formatted.
 
 ## Non-identifiability
 
-For all our predictors, and the corresponding outcomes, we analyzed non-identifiability. It would take too much space to show all these steps but, in short, for each outcome check the corresponding covariates by creating a model matrix (without the intercept).
-
-The model matrix is then QR decomposed and we check for non-identifiability on the decomposed matrix. This can be done qualitatively, by examining pair plots.^[https://www.martinmodrak.cz/2018/05/14/identifying-non-identifiability/] However, one can also do this quantitatively.^[https://discourse.mc-stan.org/t/blog-post-identifying-non-identifiability/4201/3]
+For all our predictors, and the corresponding outcomes, we analyzed non-identifiability. It would take too much space to show all these steps but, in short, for each outcome check the corresponding covariates by creating a model matrix (without the intercept). The model matrix is then QR decomposed and we check for non-identifiability on the decomposed matrix. This can be done qualitatively, by examining pair plots.^[https://www.martinmodrak.cz/2018/05/14/identifying-non-identifiability/] However, one can also do this quantitatively.^[https://discourse.mc-stan.org/t/blog-post-identifying-non-identifiability/4201/3]
 
 # Confirmatory factor analysis
 
@@ -205,9 +203,7 @@ res_cfa <- cfa(m_cfa, data = df)
 summary(res_cfa, fit.measures=TRUE)
 ```
 
-The summary shows that $\chi^2$, `CFI/TLI`, `SRMR` look ok. For $\chi^2$ we want the test statistic for the `Model Test User Model` divided by the number of free parameters to be $\gt 2$. `CFI/TLI` should be $\gt 0.95$ and `SRMR` and `RMSEA`should be $\lt 0.05$.^[https://paolotoffanin.wordpress.com/2018/05/19/beginning-with-sem-in-lavaan/]
-
-`RMSEA` is slightly above the cutoff criteria but that is not strange considering our sample size $n=1377$.
+The summary shows that `CFI/TLI` and `SRMR` look ok. `CFI/TLI` should be $\gt 0.95$ and `SRMR` and `RMSEA`should be $\lt 0.05$.^[https://paolotoffanin.wordpress.com/2018/05/19/beginning-with-sem-in-lavaan/] In our case, the latter diagnostics are slightly higher than the threshold but that is to be expected considering our large sample size.
 
 Next, let's check our estimations,
 ```{r}
@@ -215,7 +211,7 @@ estVals <- parameterEstimates(res_cfa, standardized = TRUE)
 estVals[estVals$op == "=~", "est"]
 ```
 
-and our factor loadings, which should be $0$,
+and our factor loadings, which should be $0$ or close to $0$,
 
 ```{r}
 estVals[estVals$op == "=~", "pvalue"]
@@ -282,7 +278,7 @@ Run the equations and show summary,
 res_full <- sem(m_full, data = df)
 summary(res_full, fit.measures = TRUE) 
 ```
-We see some diagnostics starting to move away from the thresholds, but this is the full model so not strange. Let's remove all covariates with $p \gt 0.1$,
+Let's remove all covariates with $p \gt 0.1$,
 
 ```{r}
 m_sem <- '
@@ -315,7 +311,7 @@ res_sem <- sem(m_sem, data = df)
 summary(res_sem, fit.measures = TRUE)
 ```
 
-To summarize, `SRMR`$\lt 0.8$  and `RMSEA`$= 0.051$, is generally considered a good fit given our sample size [@HuB99sem]. `CFI/TLI` are both $\gt 0.95$.
+To summarize, `SRMR`$\lt 0.8$  and `RMSEA`$= 0.06$, is generally considered a good fit given our sample size [@HuB99sem]. `TLI` is above $\gt 0.95$, while `CFI`$>0.9$ (both ok considering the sample size).
 
 Now one can conduct inferences on our SEM, which you can find in the manuscript.
 

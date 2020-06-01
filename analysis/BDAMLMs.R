@@ -4,7 +4,7 @@ library(dplyr)
 library(sjmisc)
 options(mc.cores = parallel::detectCores()) # check num cores
 
-d <- fread("data/export_2020-04-16.csv", stringsAsFactors=TRUE, 
+d <- fread("data/export_2020-05-29.csv", stringsAsFactors=TRUE, 
            na.strings=c("", "null", "NA", -99))
 # cleanup some stuff
 d$age_s <- scale(as.integer(d$Age))
