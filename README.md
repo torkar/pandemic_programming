@@ -14,6 +14,8 @@ The replication package also consists of a more user friendly document of the st
 |                               # equation modeling (see also `Rmd/`)
 |   +-- BDAMLMs.R               # Analysis script with Bayesian multilevel models (reviewers might want 
 |                               # to have more details; here's plenty of it)
++-- covid-19-recoding/          # Code for testing H1 and H2 and creating the histograms in the manuscript,
+|                               # and export script to move all variable recoding if needed
 +-- data/
 |   +-- export_2020-04-16.csv   # All data in `CSV` format
 +-- docs/
