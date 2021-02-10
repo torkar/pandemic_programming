@@ -11,7 +11,7 @@ The replication package also consists of a more user friendly document of the st
 |   +-- Analysis for PP.Rmd     # The `Rmd`, which you can knit in `RStudio`
 +-- analysis/                   # 
 |   +-- SEM.R                   # Main analysis script for confirmatory factor analysis and structural 
-|                               # equation modeling (see also `Rmd/`)
+|   |                           # equation modeling (see also `Rmd/`)
 |   +-- BDAMLMs.R               # Analysis script with Bayesian multilevel models (reviewers might want 
 |                               # to have more details; here's plenty of it)
 +-- covid-19-recoding/          # Code for testing H1 and H2 and creating the histograms in the manuscript,
@@ -25,7 +25,7 @@ The replication package also consists of a more user friendly document of the st
     |   +-- clean.docx          # Cleaning instructions
     |   +-- recode.xlsx         # Recode instructions
     +-- Questionnaires/
-    |   +-- *.pdf               # Questionnaire in 12 languages
+        +-- *.pdf               # Questionnaire in 12 languages
 +-- README.md                   # This file
 +-- pandemic_programming.Rproj  # Open this in `RStudio` workspace to set working directory
 ```
