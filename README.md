@@ -1,5 +1,6 @@
-[![DOI](https://zenodo.org/badge/257594337.svg)](https://zenodo.org/badge/latestdoi/257594337)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4529098.svg)](https://doi.org/10.5281/zenodo.4529098)
 # Replication package for the manuscript *Pandemic Programming*
+10.5281/zenodo.4529098
 
 The replication package also consists of a more user friendly document of the structural equation modeling. The latest version can be viewed [https://torkar.github.io/pandemic_programming/](https://torkar.github.io/pandemic_programming/).
 
