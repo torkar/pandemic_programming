@@ -34,7 +34,7 @@ The replication package also consists of a more user friendly document of the st
 
 If you are interested in ...
 
-* the code for our the main analysis in the paper then check `analysis/SEM.R`
+* the code for the main analysis in the paper then check `analysis/SEM.R`
 * running the code then please have a look at `Rmd/` instead, where an `Rmd` file can be executed
 * the `html` when running the `Rmd`, the file is published [here](https://torkar.github.io/pandemic_programming/)
 * asking questions given a posterior probability distribution see `analysis/BDAMLMs.R`
